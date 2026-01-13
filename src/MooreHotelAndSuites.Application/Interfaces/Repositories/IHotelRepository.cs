@@ -1,6 +1,6 @@
 using MooreHotelAndSuites.Domain.Entities;
 
-namespace MooreHotelAndSuites.Domain.Interfaces
+namespace MooreHotelAndSuites.Application.Interfaces.Repositories
 {
     public interface IHotelRepository
     {

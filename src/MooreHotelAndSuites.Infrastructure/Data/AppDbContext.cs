@@ -22,49 +22,47 @@ namespace MooreHotelAndSuites.Infrastructure.Data
         public DbSet<RoomImage> RoomImages => Set<RoomImage>();
         public DbSet<RoomReview> RoomReviews => Set<RoomReview>();
 
-        protected override void OnModelCreating(ModelBuilder builder)
-        {
-            base.OnModelCreating(builder);
+  protected override void OnModelCreating(ModelBuilder builder)
+{
+    base.OnModelCreating(builder);
 
-            // =====================
-            // RoomAmenity Many-to-Many
-            // =====================
-            builder.Entity<RoomAmenity>()
-                .HasKey(ra => new { ra.RoomId, ra.AmenityId });
 
-            builder.Entity<RoomAmenity>()
-                .HasOne<Room>()
-                .WithMany(r => r.RoomAmenities)
-                .HasForeignKey(ra => ra.RoomId)
-                .OnDelete(DeleteBehavior.Cascade);
+    builder.Entity<RoomAmenity>()
+        .HasKey(ra => new { ra.RoomId, ra.AmenityId });
 
-            builder.Entity<RoomAmenity>()
-                .HasOne<Amenity>()
-                .WithMany()
-                .HasForeignKey(ra => ra.AmenityId)
-                .OnDelete(DeleteBehavior.Cascade);
+    builder.Entity<RoomAmenity>()
+        .HasOne(ra => ra.Room)
+        .WithMany(r => r.RoomAmenities)
+        .HasForeignKey(ra => ra.RoomId);
 
-            // =====================
-            // RoomImage
-            // =====================
-            builder.Entity<RoomImage>()
-                .HasIndex(i => new { i.RoomId, i.DisplayOrder })
-                .IsUnique();
+    builder.Entity<RoomAmenity>()
+        .HasOne(ra => ra.Amenity)
+        .WithMany(a => a.RoomAmenities)
+        .HasForeignKey(ra => ra.AmenityId);
 
-            builder.Entity<RoomImage>()
-                .HasOne<Room>()
-                .WithMany(r => r.Images)
-                .HasForeignKey(i => i.RoomId)
-                .OnDelete(DeleteBehavior.Cascade);
+   
+    builder.Entity<RoomImage>()
+        .HasIndex(i => new { i.RoomId, i.DisplayOrder })
+        .IsUnique();
 
-            // =====================
-            // RoomReview
-            // =====================
-            builder.Entity<RoomReview>()
-                .HasOne<Room>()
-                .WithMany(r => r.Reviews)
-                .HasForeignKey(r => r.RoomId)
-                .OnDelete(DeleteBehavior.Cascade);
-        }
+  builder.Entity<RoomImage>()
+    .HasOne(i => i.Room)
+    .WithMany(r => r.Images)
+    .HasForeignKey(i => i.RoomId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+
+
+    // =====================
+    // RoomReview
+    // =====================
+builder.Entity<RoomReview>()
+    .HasOne(r => r.Room)
+    .WithMany(room => room.Reviews)
+    .HasForeignKey(r => r.RoomId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+}
+
     }
 }

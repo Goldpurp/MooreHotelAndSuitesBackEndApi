@@ -1,3 +1,5 @@
+using MooreHotelAndSuites.Domain.Entities;
+
 namespace MooreHotelAndSuites.Domain.Entities
 {
     public class Hotel

@@ -39,7 +39,7 @@ namespace MooreHotelAndSuites.API.Controllers
 
             return Ok(new { token, roles });
         }
-
+          
         public class LoginRequest
         {
             public string Email { get; set; } = string.Empty;

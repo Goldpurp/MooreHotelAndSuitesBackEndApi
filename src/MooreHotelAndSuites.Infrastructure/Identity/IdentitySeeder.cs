@@ -7,60 +7,62 @@ using System.Linq;
 
 namespace MooreHotelAndSuites.Infrastructure.Identity
 {
-    public static class IdentitySeeder
+   public static class IdentitySeeder
+{
+    private static readonly string[] Roles =
+        { "Admin", "Manager", "Receptionist" };
+
+    public static async Task SeedAsync(IServiceProvider sp)
     {
-        // Default roles
-        private static readonly string[] Roles = new[] { "Admin", "Manager", "Receptionist" };
+        var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
+        var config = sp.GetRequiredService<IConfiguration>();
 
-        public static async Task SeedAsync(IServiceProvider serviceProvider)
+        foreach (var role in Roles)
         {
-            // Resolve required services for ApplicationUser
-            var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-            var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-            var config = serviceProvider.GetRequiredService<IConfiguration>();
-
-            // Get admin credentials from configuration
-            var adminSection = config.GetSection("AdminSeed");
-            var adminUsername = adminSection.GetValue<string>("Username") ?? "MooreHotel_Admin";
-            var adminEmail = adminSection.GetValue<string>("Email") ?? "admin@moorehotel.local";
-            var adminPassword = adminSection.GetValue<string>("Password") ?? "Moore123!";
-
-            // Create roles if they don't exist
-            foreach (var role in Roles)
+            if (!await roleManager.RoleExistsAsync(role))
             {
-                if (!await roleManager.RoleExistsAsync(role))
-                {
-                    await roleManager.CreateAsync(new IdentityRole(role));
-                }
-            }
-
-            // Check if admin user exists
-            var adminUser = await userManager.FindByNameAsync(adminUsername)
-                            ?? await userManager.FindByEmailAsync(adminEmail);
-
-            if (adminUser == null)
-            {
-                // Create admin user as ApplicationUser
-                adminUser = new ApplicationUser
-                {
-                    FullName = "Moore Hotel Administrator",
-                    UserName = adminUsername,
-                    Email = adminEmail,
-                    EmailConfirmed = true
-                };
-
-                var result = await userManager.CreateAsync(adminUser, adminPassword);
-
-                if (result.Succeeded)
-                {
-                    await userManager.AddToRoleAsync(adminUser, "Admin");
-                }
-                else
-                {
-                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                    throw new Exception($"Failed to create admin user: {errors}");
-                }
+                await roleManager.CreateAsync(new IdentityRole(role));
             }
         }
+
+        var adminSection = config.GetSection("AdminSeed");
+        var adminUsername = adminSection.GetValue<string>("Username")
+            ?? throw new InvalidOperationException("AdminSeed:Username missing");
+        var adminEmail = adminSection.GetValue<string>("Email")
+            ?? throw new InvalidOperationException("AdminSeed:Email missing");
+        var adminPassword = adminSection.GetValue<string>("Password")
+            ?? throw new InvalidOperationException("AdminSeed:Password missing");
+
+        var adminUser =
+            await userManager.FindByNameAsync(adminUsername)
+            ?? await userManager.FindByEmailAsync(adminEmail);
+
+        if (adminUser == null)
+        {
+            adminUser = new ApplicationUser
+            {
+                FullName = "Moore Hotel Administrator",
+                UserName = adminUsername,
+                Email = adminEmail,
+                EmailConfirmed = true
+            };
+
+            var result = await userManager.CreateAsync(adminUser, adminPassword);
+
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ",
+                    result.Errors.Select(e => e.Description));
+                throw new Exception(errors);
+            }
+        }
+
+        if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
+        {
+            await userManager.AddToRoleAsync(adminUser, "Admin");
+        }
     }
+}
+
 }

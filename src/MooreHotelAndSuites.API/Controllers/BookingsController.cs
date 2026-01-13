@@ -19,12 +19,13 @@ namespace MooreHotelAndSuites.API.Controllers
             return Created(string.Empty, b);
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
+            [HttpGet("{id:guid}")]
+        public async Task<IActionResult> Get(Guid id)
         {
             var res = await _bookingService.GetAsync(id);
             if (res == null) return NotFound();
             return Ok(res);
         }
+
     }
 }

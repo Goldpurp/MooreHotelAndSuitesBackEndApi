@@ -1,5 +1,5 @@
 using MooreHotelAndSuites.Domain.Entities;
-using MooreHotelAndSuites.Domain.Interfaces;
+using MooreHotelAndSuites.Application.Interfaces.Repositories;
 using MooreHotelAndSuites.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +10,7 @@ namespace MooreHotelAndSuites.Infrastructure.Repositories
         private readonly AppDbContext _db;
         public BookingRepository(AppDbContext db) => _db = db;
         public async Task AddAsync(Booking booking) { await _db.Bookings.AddAsync(booking); await _db.SaveChangesAsync(); }
-        public async Task<IEnumerable<Booking>> GetByRoomAsync(int roomId) => await _db.Bookings.Where(b=>b.RoomId==roomId).ToListAsync();
-        public async Task<Booking?> GetByIdAsync(int id) => await _db.Bookings.FindAsync(id);
+        public async Task<IEnumerable<Booking>> GetByRoomAsync(Guid roomId) => await _db.Bookings.Where(b=>b.RoomId==roomId).ToListAsync();
+        public async Task<Booking?> GetByIdAsync(Guid id) => await _db.Bookings.FindAsync(id);
     }
 }

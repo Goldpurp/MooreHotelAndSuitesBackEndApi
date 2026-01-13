@@ -1,5 +1,6 @@
 using MooreHotelAndSuites.Domain.Entities;
-using MooreHotelAndSuites.Domain.Interfaces;
+using MooreHotelAndSuites.Application.Interfaces.Repositories;
+
 namespace MooreHotelAndSuites.Application.Services
 {
     public class GuestService
