@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using MooreHotelAndSuites.Application.Services;
-using MooreHotelAndSuites.Domain.Entities;
+using MooreHotelAndSuites.Application.DTOs.Guests;
+using MooreHotelAndSuites.Application.Interfaces.Services;
 
 namespace MooreHotelAndSuites.API.Controllers
 {
@@ -8,10 +8,33 @@ namespace MooreHotelAndSuites.API.Controllers
     [Route("api/[controller]")]
     public class GuestsController : ControllerBase
     {
-        private readonly GuestService _guestService;
-        public GuestsController(GuestService guestService) => _guestService = guestService;
+        private readonly IGuestService _guestService;
+
+        public GuestsController(IGuestService guestService)
+        {
+            _guestService = guestService;
+        }
 
         [HttpPost]
-        public async Task<IActionResult> Create(Guest g) { await _guestService.CreateAsync(g); return Created(string.Empty, g); }
+        public async Task<IActionResult> Create([FromBody] CreateGuestDto dto)
+        {
+            var guestId = await _guestService.CreateAsync(dto);
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = guestId },
+                null
+            );
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var guest = await _guestService.GetByIdAsync(id);
+            if (guest == null)
+                return NotFound();
+
+            return Ok(guest);
+        }
     }
 }

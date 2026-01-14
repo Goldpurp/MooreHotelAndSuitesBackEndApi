@@ -1,4 +1,5 @@
-namespace MooreHotelAndSuites.Domain.Entities
+namespace MooreHotelAndSuites.Domain.Enums
+
 {
       public enum BedType
     {

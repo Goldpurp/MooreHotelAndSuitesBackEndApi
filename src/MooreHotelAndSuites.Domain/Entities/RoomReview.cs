@@ -5,13 +5,15 @@ namespace MooreHotelAndSuites.Domain.Entities
 {
     public class RoomReview
     {
-        public int Id { get; set; }
-        public int RoomId { get; set; }
-        public string GuestName { get; set; } = string.Empty;
+        public Guid Id { get; set; }
+        public Guid RoomId { get; set; }
 
-        [Range(1, 5)]
+  
+        public Room Room { get; set; } = null!;
+
         public int Rating { get; set; }
         public string? Comment { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime CreatedAt { get; set; }
     }
 }

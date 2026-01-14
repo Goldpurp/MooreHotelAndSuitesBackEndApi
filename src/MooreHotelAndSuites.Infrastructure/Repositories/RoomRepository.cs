@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MooreHotelAndSuites.Domain.Entities;
-using MooreHotelAndSuites.Domain.Interfaces;
+using MooreHotelAndSuites.Domain.Enums;
+using MooreHotelAndSuites.Application.Interfaces.Repositories;
 using MooreHotelAndSuites.Infrastructure.Data;
 
 namespace MooreHotelAndSuites.Infrastructure.Repositories
@@ -15,14 +16,15 @@ namespace MooreHotelAndSuites.Infrastructure.Repositories
         }
 
         // =====================
-        // BASIC CRUD
+        // READ OPERATIONS
         // =====================
 
-        public async Task<Room?> GetByIdAsync(int roomId)
+        public async Task<Room?> GetByIdAsync(Guid roomId)
         {
             return await _db.Rooms
-                .Include(r => r.RoomAmenities)
                 .Include(r => r.Images)
+                .Include(r => r.RoomAmenities)
+                    .ThenInclude(ra => ra.Amenity)
                 .Include(r => r.Reviews)
                 .FirstOrDefaultAsync(r => r.Id == roomId);
         }
@@ -32,58 +34,36 @@ namespace MooreHotelAndSuites.Infrastructure.Repositories
             return await _db.Rooms
                 .Include(r => r.Images)
                 .Include(r => r.RoomAmenities)
-                .Include(r => r.Reviews)
+                    .ThenInclude(ra => ra.Amenity)
                 .ToListAsync();
         }
 
+        public async Task<IReadOnlyList<Room>> GetAvailableRoomsAsync(
+            DateTime checkIn,
+            DateTime checkOut,
+            int guests)
+        {
+            return await _db.Rooms
+                .Include(r => r.Images)
+                .Where(r =>
+                    r.Status == RoomStatus.Available &&
+                    r.Capacity >= guests)
+                .ToListAsync();
+        }
+
+        // =====================
+        // WRITE OPERATIONS
+        // =====================
+
         public async Task AddAsync(Room room)
         {
-            // Step 1: Add room to generate Id
             _db.Rooms.Add(room);
             await _db.SaveChangesAsync();
-
-            // Step 2: Assign RoomId to nested entities
-            foreach (var amenity in room.RoomAmenities)
-            {
-                amenity.RoomId = room.Id;
-            }
-
-            foreach (var image in room.Images)
-            {
-                image.RoomId = room.Id;
-            }
-
-            foreach (var review in room.Reviews)
-            {
-                review.RoomId = room.Id;
-            }
-
-            // Step 3: Save nested entities
-            await _db.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(Room room)
-        {
-            _db.Rooms.Update(room);
-            await _db.SaveChangesAsync();
-        }
-
-        public async Task DeleteAsync(Room room)
-        {
-            _db.Rooms.Remove(room);
-            await _db.SaveChangesAsync();
-        }
-
-        // =====================
-        // ADMIN OPERATIONS
-        // =====================
-
-        public async Task<Room?> GetRoomForAdminAsync(int roomId)
-        {
-            return await GetByIdAsync(roomId);
-        }
-
-        public async Task UpdateRoomAmenitiesAsync(int roomId, IReadOnlyCollection<int> amenityIds)
+        public async Task UpdateRoomAmenitiesAsync(
+            Guid roomId,
+            IReadOnlyCollection<Guid> amenityIds)
         {
             var room = await _db.Rooms
                 .Include(r => r.RoomAmenities)
@@ -92,19 +72,23 @@ namespace MooreHotelAndSuites.Infrastructure.Repositories
             if (room == null) return;
 
             room.RoomAmenities.Clear();
+
             foreach (var amenityId in amenityIds)
             {
                 room.RoomAmenities.Add(new RoomAmenity
                 {
-                    RoomId = roomId,
+                    RoomId = room.Id,
                     AmenityId = amenityId
                 });
             }
 
+            room.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
         }
 
-        public async Task UpdateRoomImagesAsync(int roomId, IReadOnlyCollection<RoomImage> images)
+        public async Task UpdateRoomImagesAsync(
+            Guid roomId,
+            IReadOnlyCollection<RoomImage> images)
         {
             var room = await _db.Rooms
                 .Include(r => r.Images)
@@ -113,16 +97,20 @@ namespace MooreHotelAndSuites.Infrastructure.Repositories
             if (room == null) return;
 
             room.Images.Clear();
-            foreach (var img in images)
+
+            foreach (var image in images)
             {
-                img.RoomId = roomId; // ensure foreign key is set
-                room.Images.Add(img);
+                image.RoomId = roomId;
+                room.Images.Add(image);
             }
 
+            room.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
         }
 
-        public async Task UpdateRoomStatusAsync(int roomId, RoomStatus status)
+        public async Task UpdateRoomStatusAsync(
+            Guid roomId,
+            RoomStatus status)
         {
             var room = await _db.Rooms.FindAsync(roomId);
             if (room == null) return;
@@ -133,43 +121,18 @@ namespace MooreHotelAndSuites.Infrastructure.Repositories
             await _db.SaveChangesAsync();
         }
 
-        // =====================
-        // GUEST OPERATIONS
-        // =====================
-
-        public async Task<IReadOnlyList<Room>> GetAvailableRoomsAsync(DateTime checkIn, DateTime checkOut, int guests)
-        {
-            return await _db.Rooms
-                .Include(r => r.Images)
-                .Where(r =>
-                    r.Status == RoomStatus.Available &&
-                    r.Capacity >= guests)
-                .ToListAsync();
-        }
-
-        public async Task<Room?> GetRoomForGuestAsync(int roomId)
-        {
-            return await _db.Rooms
-                .Include(r => r.Images)
-                .Include(r => r.RoomAmenities)
-                .Include(r => r.Reviews)
-                .FirstOrDefaultAsync(r => r.Id == roomId);
-        }
-
-        // =====================
-        // RATINGS
-        // =====================
-
-        public async Task UpdateRoomRatingAsync(int roomId)
+        public async Task UpdateRoomRatingAsync(Guid roomId)
         {
             var room = await _db.Rooms
                 .Include(r => r.Reviews)
                 .FirstOrDefaultAsync(r => r.Id == roomId);
 
-            if (room == null || !room.Reviews.Any()) return;
+            if (room == null || !room.Reviews.Any())
+                return;
 
             room.TotalReviews = room.Reviews.Count;
             room.AverageRating = room.Reviews.Average(r => r.Rating);
+            room.UpdatedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
         }

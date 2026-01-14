@@ -1,5 +1,5 @@
 using MooreHotelAndSuites.Domain.Entities;
-using MooreHotelAndSuites.Domain.Interfaces;
+using MooreHotelAndSuites.Application.Interfaces.Repositories;
 using MooreHotelAndSuites.Infrastructure.Data;
 
 namespace MooreHotelAndSuites.Infrastructure.Repositories

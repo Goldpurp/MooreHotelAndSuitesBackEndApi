@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using MooreHotelAndSuites.Application.DTOs.Booking;
 using MooreHotelAndSuites.Application.Services;
-using MooreHotelAndSuites.Domain.Entities;
+using MooreHotelAndSuites.Application.Interfaces.Services;
 
 namespace MooreHotelAndSuites.API.Controllers
 {
@@ -8,23 +9,26 @@ namespace MooreHotelAndSuites.API.Controllers
     [Route("api/[controller]")]
     public class BookingsController : ControllerBase
     {
-        private readonly BookingService _bookingService;
-        public BookingsController(BookingService bookingService) => _bookingService = bookingService;
+        private readonly IBookingService _bookingService;
 
-        [HttpPost]
-        public async Task<IActionResult> Create(Booking b)
+        public BookingsController(IBookingService bookingService)
         {
-            b.Reference = "BK-" + Guid.NewGuid().ToString().Split('-')[0].ToUpper();
-            await _bookingService.CreateAsync(b);
-            return Created(string.Empty, b);
+            _bookingService = bookingService;
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateBookingDto dto)
         {
-            var res = await _bookingService.GetAsync(id);
-            if (res == null) return NotFound();
-            return Ok(res);
+            var booking = await _bookingService.CreateAsync(dto);
+            return CreatedAtAction(nameof(Get), new { id = booking.Id }, booking);
+        }
+
+        [HttpGet("{id:guid}")]
+        public async Task<IActionResult> Get(Guid id)
+        {
+            var booking = await _bookingService.GetAsync(id);
+            if (booking == null) return NotFound();
+            return Ok(booking);
         }
     }
 }
