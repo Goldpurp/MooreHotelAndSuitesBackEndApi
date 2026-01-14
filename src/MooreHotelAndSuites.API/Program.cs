@@ -106,10 +106,10 @@ services.AddScoped<IBookingRepository, BookingRepository>();
 services.AddScoped<IGuestRepository, GuestRepository>();
 
 
-services.AddScoped<RoomCommandService>();
-services.AddScoped<RoomQueryService>();
-services.AddScoped<HotelService>();
-services.AddScoped<BookingService>();
+services.AddScoped<IRoomCommandService, RoomCommandService>();
+services.AddScoped<IRoomQueryService, RoomQueryService>();
+services.AddScoped<IHotelService, HotelService>();
+services.AddScoped<IBookingService, BookingService>();
 services.AddScoped<GuestService>();
 
 var app = builder.Build();

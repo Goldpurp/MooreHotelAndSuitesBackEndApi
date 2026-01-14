@@ -1,11 +1,12 @@
 using MooreHotelAndSuites.Application.DTOs.Rooms;
 using MooreHotelAndSuites.Application.Interfaces.Repositories;
+using MooreHotelAndSuites.Application.Interfaces.Services;
 
 
 
 namespace MooreHotelAndSuites.Application.Services
 {
-    public class RoomQueryService
+    public class RoomQueryService : IRoomQueryService
     {
         private readonly IRoomRepository _repo;
 
