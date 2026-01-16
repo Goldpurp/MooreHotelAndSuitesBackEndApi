@@ -10,6 +10,8 @@ using MooreHotelAndSuites.Application.Services;
 using MooreHotelAndSuites.Infrastructure.Data;
 using MooreHotelAndSuites.Infrastructure.Identity;
 using MooreHotelAndSuites.Infrastructure.Repositories;
+using MooreHotelAndSuites.Infrastructure.Auth;
+
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -80,23 +82,27 @@ var jwtKey = jwtSettings.GetValue<string>("Key")
 
 var key = Encoding.UTF8.GetBytes(jwtKey);
 
-services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
 
-            ValidIssuer = jwtSettings["Issuer"],
-            ValidAudience = jwtSettings["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ClockSkew = TimeSpan.Zero
+    };
+});
 
-            ClockSkew = TimeSpan.Zero
-        };
-    });
 
 
 
@@ -110,7 +116,9 @@ services.AddScoped<IRoomCommandService, RoomCommandService>();
 services.AddScoped<IRoomQueryService, RoomQueryService>();
 services.AddScoped<IHotelService, HotelService>();
 services.AddScoped<IBookingService, BookingService>();
-services.AddScoped<GuestService>();
+services.AddScoped<IGuestService, GuestService>();
+services.AddScoped<IJwtTokenService, JwtTokenService>();
+
 
 var app = builder.Build();
 

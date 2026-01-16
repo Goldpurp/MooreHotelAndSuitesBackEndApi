@@ -2,11 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using MooreHotelAndSuites.Application.DTOs.Booking;
 using MooreHotelAndSuites.Application.Services;
 using MooreHotelAndSuites.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MooreHotelAndSuites.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class BookingsController : ControllerBase
     {
         private readonly IBookingService _bookingService;
