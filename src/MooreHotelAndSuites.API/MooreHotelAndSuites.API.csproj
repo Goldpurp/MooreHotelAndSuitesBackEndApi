@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MooreHotelAndSuites.Application\MooreHotelAndSuites.Application.csproj" />
-    <ProjectReference Include="..\MooreHotelAndSuites.Infrastructure\MooreHotelAndSuites.Infrastructure.csproj" />
+   <ProjectReference Include="..\MooreHotelAndSuites.Infrastructure\MooreHotelAndSuites.Infrastructure.csproj" />
     <ProjectReference Include="..\MooreHotelAndSuites.Domain\MooreHotelAndSuites.Domain.csproj" />
   </ItemGroup>
 

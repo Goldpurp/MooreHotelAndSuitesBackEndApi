@@ -39,7 +39,7 @@ namespace MooreHotelAndSuites.API.Controllers
             return NoContent();
         }
 
-        // ✅ GUID instead of int
+        
         [HttpPut("{roomId:guid}/images")]
         public async Task<IActionResult> UpdateImages(
             Guid roomId,
