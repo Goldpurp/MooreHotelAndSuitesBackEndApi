@@ -51,9 +51,17 @@ namespace MooreHotelAndSuites.Application.Services
         AverageRating = room.AverageRating,
         TotalReviews = room.TotalReviews,
         Amenities = room.RoomAmenities.Select(a => a.Amenity!.Name),
+      
         Images = room.Images
             .OrderBy(i => i.DisplayOrder)
-            .Select(i => i.ImageUrl)
+            .Select(i => new RoomImageDto
+            {
+                Id = i.Id,
+                ImageUrl = i.ImageUrl,
+                IsCover = i.IsCover,
+                DisplayOrder = i.DisplayOrder
+            })
+            .ToList()
     };
 }
 

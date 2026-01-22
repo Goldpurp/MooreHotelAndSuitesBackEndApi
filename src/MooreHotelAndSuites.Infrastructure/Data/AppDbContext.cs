@@ -10,9 +10,7 @@ namespace MooreHotelAndSuites.Infrastructure.Data
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options) { }
 
-        // =====================
-        // DbSets
-        // =====================
+    
         public DbSet<Hotel> Hotels => Set<Hotel>();
         public DbSet<Room> Rooms => Set<Room>();
         public DbSet<Guest> Guests => Set<Guest>();
@@ -51,11 +49,14 @@ namespace MooreHotelAndSuites.Infrastructure.Data
     .HasForeignKey(i => i.RoomId)
     .OnDelete(DeleteBehavior.Cascade);
 
+builder.Entity<Booking>()
+    .HasOne(b => b.Room)
+    .WithMany()
+    .HasForeignKey(b => b.RoomId)
+    .OnDelete(DeleteBehavior.Restrict);
 
 
-    // =====================
-    // RoomReview
-    // =====================
+  
 builder.Entity<RoomReview>()
     .HasOne(r => r.Room)
     .WithMany(room => room.Reviews)

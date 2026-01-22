@@ -15,10 +15,6 @@ namespace MooreHotelAndSuites.Infrastructure.Repositories
             _db = db;
         }
 
-        // =====================
-        // READ OPERATIONS
-        // =====================
-
         public async Task<Room?> GetByIdAsync(Guid roomId)
         {
             return await _db.Rooms
@@ -51,13 +47,27 @@ namespace MooreHotelAndSuites.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        // =====================
-        // WRITE OPERATIONS
-        // =====================
+       
 
         public async Task AddAsync(Room room)
         {
             _db.Rooms.Add(room);
+            await _db.SaveChangesAsync();
+        }
+
+       public async Task AddRoomImageAsync(RoomImage image)
+{
+            _db.RoomImages.Add(image);
+            await _db.SaveChangesAsync();
+}
+        public async Task ClearCoverImageAsync(Guid roomId)
+        {
+            var covers = _db.RoomImages
+                .Where(x => x.RoomId == roomId && x.IsCover);
+
+            foreach (var img in covers)
+                img.IsCover = false;
+
             await _db.SaveChangesAsync();
         }
 
@@ -107,6 +117,16 @@ namespace MooreHotelAndSuites.Infrastructure.Repositories
             room.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
         }
+        public async Task<RoomImage?> GetImageByIdAsync(Guid imageId)
+    {
+        return await _db.RoomImages.FirstOrDefaultAsync(x => x.Id == imageId);
+    }
+
+    public async Task DeleteRoomImageAsync(RoomImage image)
+    {
+        _db.RoomImages.Remove(image);
+        await _db.SaveChangesAsync();
+    }
 
         public async Task UpdateRoomStatusAsync(
             Guid roomId,
@@ -120,7 +140,7 @@ namespace MooreHotelAndSuites.Infrastructure.Repositories
 
             await _db.SaveChangesAsync();
         }
-
+        
         public async Task UpdateRoomRatingAsync(Guid roomId)
         {
             var room = await _db.Rooms

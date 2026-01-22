@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using MooreHotelAndSuites.Infrastructure.Auth;
 using MooreHotelAndSuites.Infrastructure.Identity;
+using Microsoft.EntityFrameworkCore;
+using MooreHotelAndSuites.Application.DTOs.Auth;
+
 
 namespace MooreHotelAndSuites.API.Controllers
 {
@@ -19,31 +22,52 @@ namespace MooreHotelAndSuites.API.Controllers
             _userManager = userManager;
             _jwt = jwt;
         }
+[HttpPost("login")]
+public async Task<IActionResult> Login(LoginDto model)
+{
+    var user = await _userManager.FindByNameAsync(model.Username);
+    if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password))
+        return Unauthorized("Invalid credentials");
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest req)
-        {
-            // ✅ Use correct field name _userManager
-            var user = await _userManager.FindByNameAsync(req.Email) 
-                       ?? await _userManager.FindByEmailAsync(req.Email);
+    var tokens = await _jwt.GenerateTokensAsync(user);
 
-            if (user == null)
-                return Unauthorized(new { message = "Invalid credentials" });
+    return Ok(new
+    {
+        accessToken = tokens.AccessToken,
+        refreshToken = tokens.RefreshToken
+    });
+}
+[HttpPost("refresh")]
 
-            var result = await _signInManager.CheckPasswordSignInAsync(user, req.Password, false);
-            if (!result.Succeeded)
-                return Unauthorized(new { message = "Invalid credentials" });
+public async Task<IActionResult> Refresh(TokenRefreshDto model)
+{
+    var user = await _userManager.Users
+        .FirstOrDefaultAsync(u => u.RefreshToken == model.RefreshToken);
 
-            var token = await _jwt.GenerateTokenAsync(user);
-            var roles = await _userManager.GetRolesAsync(user);
+    if (user == null || user.RefreshTokenExpiryTime < DateTime.UtcNow)
+        return Unauthorized("Invalid or expired refresh token");
 
-            return Ok(new { token, roles });
-        }
+    var newAccessToken = await _jwt.GenerateAccessTokenAsync(user);
+
+    return Ok(new
+    {
+        accessToken = newAccessToken
+    });
+}
+
           
-        public class LoginRequest
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
         {
-            public string Email { get; set; } = string.Empty;
-            public string Password { get; set; } = string.Empty;
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Ok();
+
+            user.RefreshToken = null;
+            await _userManager.UpdateAsync(user);
+
+            return Ok("Logged out");
         }
     }
+
+    
 }

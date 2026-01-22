@@ -99,9 +99,11 @@ services.AddAuthentication(options =>
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(key),
+
         ClockSkew = TimeSpan.Zero
     };
 });
+
 
 
 
@@ -118,6 +120,7 @@ services.AddScoped<IHotelService, HotelService>();
 services.AddScoped<IBookingService, BookingService>();
 services.AddScoped<IGuestService, GuestService>();
 services.AddScoped<IJwtTokenService, JwtTokenService>();
+services.AddScoped<IImageStorageService, CloudinaryImageStorageService>();
 
 
 var app = builder.Build();

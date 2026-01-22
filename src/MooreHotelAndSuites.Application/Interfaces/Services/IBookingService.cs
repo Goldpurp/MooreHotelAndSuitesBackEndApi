@@ -5,7 +5,7 @@ using MooreHotelAndSuites.Application.DTOs.Booking;
     public interface IBookingService
     {
         Task<BookingDto?> GetAsync(Guid id);
-        Task<BookingDto> CreateAsync(CreateBookingDto dto);
-        
+       Task<BookingDto> CreateAsync(CreateBookingDto dto, string guestId);
+     Task CancelAsync(Guid id);
     }
 }

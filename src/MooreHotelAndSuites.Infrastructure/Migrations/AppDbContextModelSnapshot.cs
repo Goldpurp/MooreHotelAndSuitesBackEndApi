@@ -17,7 +17,7 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.0")
+                .HasAnnotation("ProductVersion", "8.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -181,8 +181,9 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
                     b.Property<DateTime>("CheckOut")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("GuestId")
-                        .HasColumnType("integer");
+                    b.Property<string>("GuestId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Reference")
                         .IsRequired()
@@ -192,8 +193,6 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("GuestId");
 
                     b.HasIndex("RoomId");
 
@@ -207,6 +206,9 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -412,6 +414,12 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("RefreshTokenExpiryTime")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
@@ -487,19 +495,11 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
 
             modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.Booking", b =>
                 {
-                    b.HasOne("MooreHotelAndSuites.Domain.Entities.Guest", "Guest")
-                        .WithMany()
-                        .HasForeignKey("GuestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("MooreHotelAndSuites.Domain.Entities.Room", "Room")
                         .WithMany()
                         .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Guest");
 
                     b.Navigation("Room");
                 });
