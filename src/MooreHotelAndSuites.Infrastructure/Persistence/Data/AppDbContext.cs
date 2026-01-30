@@ -19,6 +19,9 @@ namespace MooreHotelAndSuites.Infrastructure.Data
         public DbSet<RoomAmenity> RoomAmenities => Set<RoomAmenity>();
         public DbSet<RoomImage> RoomImages => Set<RoomImage>();
         public DbSet<RoomReview> RoomReviews => Set<RoomReview>();
+        public DbSet<Notification> Notifications => Set<Notification>();
+        public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
 
   protected override void OnModelCreating(ModelBuilder builder)
 {

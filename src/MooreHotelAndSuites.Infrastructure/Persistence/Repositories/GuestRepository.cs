@@ -2,7 +2,7 @@ using MooreHotelAndSuites.Domain.Entities;
 using MooreHotelAndSuites.Application.Interfaces.Repositories;
 using MooreHotelAndSuites.Infrastructure.Data;
 
-namespace MooreHotelAndSuites.Infrastructure.Repositories
+namespace MooreHotelAndSuites.Infrastructure.Persistence.Repositories
 {
     public class GuestRepository : IGuestRepository
     {

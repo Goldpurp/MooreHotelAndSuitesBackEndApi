@@ -15,5 +15,6 @@ namespace MooreHotelAndSuites.Domain.Entities
         public DateTime CheckIn { get; set; }
         public DateTime CheckOut { get; set; }
         public string Reference { get; set; } = string.Empty;
+        public decimal TotalAmount { get; set; }
     }
 }

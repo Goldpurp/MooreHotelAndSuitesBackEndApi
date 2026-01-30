@@ -3,7 +3,7 @@ using MooreHotelAndSuites.Application.Interfaces.Repositories;
 using MooreHotelAndSuites.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace MooreHotelAndSuites.Infrastructure.Repositories
+namespace MooreHotelAndSuites.Infrastructure.Persistence.Repositories
 {
     public class HotelRepository : IHotelRepository
     {

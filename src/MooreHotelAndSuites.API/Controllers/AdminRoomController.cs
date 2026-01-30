@@ -53,7 +53,7 @@ public async Task<IActionResult> UploadImage(
     if (!AllowedTypes.Contains(file.ContentType))
         return BadRequest("Only JPEG, PNG, and WEBP images are allowed.");
 
-    // API converts IFormFile → Stream and passes clean data down
+  
     await using var stream = file.OpenReadStream();
 
     var imageUrl = await _imageStorage.UploadAsync(
