@@ -12,9 +12,11 @@ namespace MooreHotelAndSuites.Application.Interfaces.Repositories
             DateTime checkIn,
             DateTime checkOut,
             int guests);
-
+         Task<RoomImage?> GetImageByIdAsync(Guid imageId);
         // WRITE
         Task AddAsync(Room room);
+        Task AddRoomImageAsync(RoomImage image);
+         Task ClearCoverImageAsync(Guid roomId);
         Task UpdateRoomAmenitiesAsync(
             Guid roomId,
             IReadOnlyCollection<Guid> amenityIds);
@@ -26,7 +28,9 @@ namespace MooreHotelAndSuites.Application.Interfaces.Repositories
         Task UpdateRoomStatusAsync(
             Guid roomId,
             RoomStatus status);
-
+        Task DeleteRoomImageAsync(RoomImage image);
         Task UpdateRoomRatingAsync(Guid roomId);
+     
+
     }
 }

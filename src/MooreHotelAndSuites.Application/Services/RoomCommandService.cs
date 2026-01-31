@@ -4,16 +4,22 @@ using MooreHotelAndSuites.Application.Interfaces.Services;
 using MooreHotelAndSuites.Domain.Entities;
 using MooreHotelAndSuites.Domain.Enums;
 
+
 namespace MooreHotelAndSuites.Application.Services
 {
     public class RoomCommandService : IRoomCommandService
     {
         private readonly IRoomRepository _repo;
+        private readonly IImageStorageService _imageStorage;
 
-        public RoomCommandService(IRoomRepository repo)
+        public RoomCommandService(
+            IRoomRepository repo,
+            IImageStorageService imageStorage)
         {
             _repo = repo;
+            _imageStorage = imageStorage;
         }
+
 
         public async Task<Guid> CreateAsync(CreateRoomDto dto)
         {
@@ -38,6 +44,28 @@ namespace MooreHotelAndSuites.Application.Services
                 await _repo.UpdateRoomAmenitiesAsync(room.Id, dto.AmenityIds);
 
             return room.Id;
+        }
+        public async Task AddImageAsync(Guid roomId, CreateRoomImageDto image)
+        {
+            
+            var room = await _repo.GetByIdAsync(roomId);
+            if (room == null)
+                throw new Exception("Room not found");
+
+            // Optional: ensure only one cover image
+            if (image.IsCover)
+                await _repo.ClearCoverImageAsync(roomId);
+
+            var entity = new RoomImage
+            {
+                Id = Guid.NewGuid(),
+                RoomId = roomId,
+                ImageUrl = image.ImageUrl,
+                IsCover = image.IsCover,
+                DisplayOrder = image.DisplayOrder
+            };
+
+            await _repo.AddRoomImageAsync(entity);
         }
 
         public Task UpdateAmenitiesAsync(
@@ -72,6 +100,19 @@ namespace MooreHotelAndSuites.Application.Services
                 dto.RoomId,
                 (RoomStatus)dto.Status);
         }
+        public async Task DeleteImageAsync(Guid imageId)
+        {
+            var image = await _repo.GetImageByIdAsync(imageId);
+            if (image == null)
+                throw new Exception("Image not found");
+
+           
+            await _imageStorage.DeleteAsync(image.ImageUrl);
+
+            
+            await _repo.DeleteRoomImageAsync(image);
+        }
+
 
         public Task UpdateRatingAsync(Guid roomId)
         {

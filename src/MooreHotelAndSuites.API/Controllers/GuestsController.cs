@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MooreHotelAndSuites.Application.DTOs.Guests;
 using MooreHotelAndSuites.Application.Interfaces.Services;
@@ -16,6 +17,7 @@ namespace MooreHotelAndSuites.API.Controllers
         }
 
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> Create([FromBody] CreateGuestDto dto)
         {
             var guestId = await _guestService.CreateAsync(dto);

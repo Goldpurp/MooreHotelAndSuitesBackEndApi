@@ -1,3 +1,6 @@
+using MooreHotelAndSuites.Application.DTOs.Rooms;
+
+
 namespace MooreHotelAndSuites.Application.DTOs.Rooms
 {
     public class RoomDetailsDto
@@ -14,7 +17,7 @@ namespace MooreHotelAndSuites.Application.DTOs.Rooms
         public string Status { get; set; } = default!;
 
         public IEnumerable<string> Amenities { get; set; } = new List<string>();
-        public IEnumerable<string> Images { get; set; } = new List<string>();
+       public IReadOnlyCollection<RoomImageDto> Images { get; set; } = new List<RoomImageDto>();
 
         public double AverageRating { get; set; }
         public int TotalReviews { get; set; }

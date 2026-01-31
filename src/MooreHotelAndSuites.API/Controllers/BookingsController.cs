@@ -3,6 +3,8 @@ using MooreHotelAndSuites.Application.DTOs.Booking;
 using MooreHotelAndSuites.Application.Services;
 using MooreHotelAndSuites.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+
 
 namespace MooreHotelAndSuites.API.Controllers
 {
@@ -18,12 +20,18 @@ namespace MooreHotelAndSuites.API.Controllers
             _bookingService = bookingService;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateBookingDto dto)
-        {
-            var booking = await _bookingService.CreateAsync(dto);
-            return CreatedAtAction(nameof(Get), new { id = booking.Id }, booking);
-        }
+    [Authorize]
+    [HttpPost]
+    public async Task<IActionResult> CreateBooking([FromBody] CreateBookingDto dto)
+    {
+        var guestId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        var booking = await _bookingService.CreateAsync(dto, guestId);
+
+        return Ok(booking);
+    }
+
+
 
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> Get(Guid id)

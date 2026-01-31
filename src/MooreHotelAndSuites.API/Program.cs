@@ -6,11 +6,23 @@ using Microsoft.OpenApi.Models;
 using MooreHotelAndSuites.API.Mappings;
 using MooreHotelAndSuites.Application.Interfaces.Repositories;
 using MooreHotelAndSuites.Application.Interfaces.Services;
+using MooreHotelAndSuites.Application.Interfaces.Auditing;
 using MooreHotelAndSuites.Application.Services;
 using MooreHotelAndSuites.Infrastructure.Data;
 using MooreHotelAndSuites.Infrastructure.Identity;
-using MooreHotelAndSuites.Infrastructure.Repositories;
+using MooreHotelAndSuites.Infrastructure.Persistence.Repositories;
 using MooreHotelAndSuites.Infrastructure.Auth;
+using MooreHotelAndSuites.Infrastructure.Auditing;
+using MooreHotelAndSuites.Domain.Abstractions;
+using MooreHotelAndSuites.Domain.Events;
+using MooreHotelAndSuites.Application.Interfaces.Events;
+using MooreHotelAndSuites.Infrastructure.Events;
+
+
+
+
+
+
 
 using System.Text;
 
@@ -73,6 +85,12 @@ services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 })
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
+ 
+services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole("Admin"));
+});
 
 
 var jwtSettings = configuration.GetSection("Jwt");
@@ -99,9 +117,11 @@ services.AddAuthentication(options =>
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(key),
+
         ClockSkew = TimeSpan.Zero
     };
 });
+
 
 
 
@@ -110,6 +130,11 @@ services.AddScoped<IHotelRepository, HotelRepository>();
 services.AddScoped<IRoomRepository, RoomRepository>();
 services.AddScoped<IBookingRepository, BookingRepository>();
 services.AddScoped<IGuestRepository, GuestRepository>();
+services.AddScoped<IAuditLogWriter, AuditLogWriter>();
+services.AddScoped<IAuditAnalyticsRepository, AuditAnalyticsRepository>();
+services.AddScoped<IBookingReadRepository, BookingReadRepository>();
+services.AddScoped<IAuditLogReadRepository, AuditLogReadRepository>();
+
 
 
 services.AddScoped<IRoomCommandService, RoomCommandService>();
@@ -118,6 +143,14 @@ services.AddScoped<IHotelService, HotelService>();
 services.AddScoped<IBookingService, BookingService>();
 services.AddScoped<IGuestService, GuestService>();
 services.AddScoped<IJwtTokenService, JwtTokenService>();
+services.AddScoped<IImageStorageService, CloudinaryImageStorageService>();
+services.AddScoped<IUserManagementService, UserManagementService>();
+services.AddScoped<IAuditAnalyticsService, AuditAnalyticsService>();
+services.AddScoped<IOperationsService, OperationsService>();
+services.AddScoped<
+    IDomainEventHandler<BookingCreatedEvent>,
+    BookingCreatedAuditHandler>();
+services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
 
 var app = builder.Build();
@@ -143,11 +176,13 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+
+
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseMiddleware<AuditLogMiddleware>();
 app.MapControllers();
 
 app.MapGet("/", () => "Moore Hotel & Suites API is running");
