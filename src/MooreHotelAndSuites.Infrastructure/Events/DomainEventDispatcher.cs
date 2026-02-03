@@ -1,28 +1,24 @@
+using MediatR;
 using MooreHotelAndSuites.Application.Interfaces.Events;
 using MooreHotelAndSuites.Domain.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace MooreHotelAndSuites.Infrastructure.Events
 {
     public sealed class DomainEventDispatcher : IDomainEventDispatcher
-{
-    private readonly IServiceProvider _provider;
-
-    public DomainEventDispatcher(IServiceProvider provider)
     {
-        _provider = provider;
-    }
-   
-    public async Task DispatchAsync<TEvent>(TEvent domainEvent)
-    {
-        var handlers = _provider
-            .GetServices<IDomainEventHandler<TEvent>>();
+        private readonly IMediator _mediator;
 
-        foreach (var handler in handlers)
+        public DomainEventDispatcher(IMediator mediator)
         {
-            await handler.HandleAsync(domainEvent);
+            _mediator = mediator;
+        }
+
+        public async Task DispatchAsync(IEnumerable<IDomainEvent> domainEvents)
+        {
+            foreach (var domainEvent in domainEvents)
+            {
+                await _mediator.Publish(domainEvent);
+            }
         }
     }
-}
-
 }

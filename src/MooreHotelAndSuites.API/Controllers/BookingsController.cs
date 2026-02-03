@@ -22,14 +22,15 @@ namespace MooreHotelAndSuites.API.Controllers
 
     [Authorize]
     [HttpPost]
-    public async Task<IActionResult> CreateBooking([FromBody] CreateBookingDto dto)
+    public async Task<IActionResult> CreateBooking([FromBody] CreateBookingRequestDto dto)
     {
-        var guestId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        // Remove guestId from here
+        var bookingId = await _bookingService.CreateBookingAsync(dto);
 
-        var booking = await _bookingService.CreateAsync(dto, guestId);
-
-        return Ok(booking);
+        return Ok(new { id = bookingId });
     }
+
+
 
 
 
@@ -40,5 +41,26 @@ namespace MooreHotelAndSuites.API.Controllers
             if (booking == null) return NotFound();
             return Ok(booking);
         }
+        [HttpPost("draft")]
+        public async Task<IActionResult> CreateDraft([FromBody] CreateBookingRequestDto dto)
+        {
+            var id = await _bookingService.CreateDraftAsync(dto);
+            return Ok(new { id });
+        }
+
+        [HttpPost("{id:guid}/checkin")]
+        public async Task<IActionResult> CheckIn(Guid id)
+        {
+            await _bookingService.CheckInAsync(id);
+            return NoContent();
+        }
+
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> Cancel(Guid id)
+        {
+            await _bookingService.CancelAsync(id);
+            return NoContent();
+        }
+
     }
 }

@@ -52,11 +52,11 @@ namespace MooreHotelAndSuites.Infrastructure.Data
     .HasForeignKey(i => i.RoomId)
     .OnDelete(DeleteBehavior.Cascade);
 
-builder.Entity<Booking>()
+ builder.Entity<Booking>()
     .HasOne(b => b.Room)
-    .WithMany()
-    .HasForeignKey(b => b.RoomId)
-    .OnDelete(DeleteBehavior.Restrict);
+    .WithMany(r => r.Bookings)
+    .HasForeignKey(b => b.RoomId);
+
 
 
   

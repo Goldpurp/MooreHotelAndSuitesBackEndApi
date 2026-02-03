@@ -6,7 +6,6 @@ using MooreHotelAndSuites.Domain.Events;
 using MooreHotelAndSuites.Application.Interfaces.Events;
 
 
-
 namespace MooreHotelAndSuites.Application.Services
 {
     public class BookingService  : IBookingService
@@ -14,46 +13,85 @@ namespace MooreHotelAndSuites.Application.Services
 {
     private readonly IBookingRepository _repo;
     private readonly IDomainEventDispatcher _eventDispatcher;
-
+   private readonly IGuestService _guestService;
     public BookingService(
         IBookingRepository repo,
-        IDomainEventDispatcher eventDispatcher)
+        IDomainEventDispatcher eventDispatcher,
+        IGuestService guestService)
     {
         _repo = repo;
         _eventDispatcher = eventDispatcher;
+        _guestService = guestService;
     }
 
 
-        public async Task<BookingDto> CreateAsync(CreateBookingDto dto, string guestId)
-        {
-            var booking = new Booking
-            {
-                Id = Guid.NewGuid(),
-                Reference = $"BK-{Guid.NewGuid().ToString()[..8].ToUpper()}",
-                CheckIn = dto.CheckIn,
-                CheckOut = dto.CheckOut,
-                RoomId = dto.RoomId,
-                GuestId = guestId
-            };
+   public async Task<Guid> CreateBookingAsync(CreateBookingRequestDto dto)
+{
+    // Ensure guest exists
+    var guestId = await _guestService.EnsureGuestAsync(
+        dto.GuestFullName,
+        dto.GuestEmail,
+        dto.GuestPhoneNumber
+    );
 
-            await _repo.AddAsync(booking);
+    
+    var booking = Booking.Create(
+        roomId: dto.RoomId,
+        checkIn: dto.CheckInDate,
+        checkOut: dto.CheckOutDate,
+        guestId: guestId
+    );
 
-               await _eventDispatcher.DispatchAsync(
-              new BookingCreatedEvent(
-            booking.Id,
-            booking.GuestId,
-            DateTime.UtcNow));
+    // Optional upfront payment
+    if (dto.InitialPaymentAmount.HasValue)
+    {
+        booking.AddPayment(
+            dto.InitialPaymentAmount.Value,
+            dto.PaymentMethod ?? "Cash",
+            dto.PayeeName ?? dto.GuestFullName,
+            dto.AccountNumber,
+            dto.BankName,
+            staffId: "SYSTEM"
+        );
+    }
 
-            return new BookingDto
-            {
-                Id = booking.Id,
-                Reference = booking.Reference,
-                CheckIn = booking.CheckIn,
-                CheckOut = booking.CheckOut,
-                RoomId = booking.RoomId,
-                GuestId = booking.GuestId
-            };
-        }
+    await _repo.AddAsync(booking);
+
+    return booking.Id;
+}
+
+
+
+public async Task<Guid> CreateDraftAsync(CreateBookingRequestDto dto)
+{
+    // Use 0 as placeholder guestId for draft bookings
+    var booking = Booking.Create(
+        dto.RoomId,
+        dto.CheckInDate,
+        dto.CheckOutDate,
+        guestId: 0
+    );
+
+    await _repo.AddAsync(booking);
+
+    return booking.Id;
+}
+
+
+public async Task CheckInAsync(Guid bookingId)
+{
+    var booking = await _repo.GetByIdAsync(bookingId);
+
+    if (booking == null)
+        throw new Exception("Booking not found");
+
+    booking.MarkAsCheckedIn();
+
+    await _repo.AddAsync(booking);
+
+    await _eventDispatcher.DispatchAsync(booking.DomainEvents);
+}
+
 
         public async Task<BookingDto?> GetAsync(Guid id)
     {

@@ -7,6 +7,8 @@ namespace MooreHotelAndSuites.Application.Interfaces.Repositories
         Task<Booking?> GetByIdAsync(Guid id);
         Task AddAsync(Booking booking);
         Task<IEnumerable<Booking>> GetByRoomAsync(Guid roomId);
+        Task UpdateAsync(Booking booking);
+        Task SaveChangesAsync();
         Task DeleteAsync(Booking booking);
     }
 }

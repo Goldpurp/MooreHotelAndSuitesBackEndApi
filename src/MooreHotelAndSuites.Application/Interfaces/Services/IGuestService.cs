@@ -1,10 +1,16 @@
 using MooreHotelAndSuites.Application.DTOs.Guests;
+using MooreHotelAndSuites.Domain.Entities;
 
 namespace MooreHotelAndSuites.Application.Interfaces.Services
 {
-    public interface IGuestService
-    {
-        Task<GuestDto?> GetByIdAsync(int id);
-        Task<int> CreateAsync(CreateGuestDto dto);
-    }
+  public interface IGuestService
+{
+    Task<int> EnsureGuestAsync(
+        string fullName,
+        string email,
+        string phone);
+
+    Task<Guest?> GetByIdAsync(int id);
+}
+
 }
