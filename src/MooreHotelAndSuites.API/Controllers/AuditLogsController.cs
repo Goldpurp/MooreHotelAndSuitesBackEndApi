@@ -24,7 +24,7 @@ public class AuditLogsController : ControllerBase
             .Select(a => new LedgerEntryDto
             {
                 Timestamp = a.OccurredAt,
-                ActorUserId = a.UserId,
+                ActorUserId = a.UserId ?? "Anonymous",
                 Action = a.Action,
                 Resource = a.Path
             })

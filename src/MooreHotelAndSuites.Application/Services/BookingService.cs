@@ -27,12 +27,13 @@ namespace MooreHotelAndSuites.Application.Services
 
    public async Task<Guid> CreateBookingAsync(CreateBookingRequestDto dto)
 {
-    // Ensure guest exists
-    var guestId = await _guestService.EnsureGuestAsync(
-        dto.GuestFullName,
-        dto.GuestEmail,
-        dto.GuestPhoneNumber
-    );
+   
+   var guestId = await _guestService.EnsureGuestAsync(
+    dto.GuestFullName,
+    dto.GuestEmail ?? string.Empty, // or throw if email is required
+    dto.GuestPhoneNumber
+);
+
 
     
     var booking = Booking.Create(

@@ -2,7 +2,9 @@ using System.Security.Claims;
 using MooreHotelAndSuites.Domain.Entities;
 using MooreHotelAndSuites.Infrastructure.Data;
 
-public class AuditLogMiddleware
+namespace MooreHotelAndSuites.API.Middleware
+{
+    public class AuditLogMiddleware
 {
     private readonly RequestDelegate _next;
 
@@ -17,19 +19,22 @@ public class AuditLogMiddleware
 
         if (context.Request.Path.StartsWithSegments("/api"))
         {
-            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+           var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Anonymous";
 
-            var log = new AuditLog
-            {
-                UserId = userId,
-                Action = context.GetEndpoint()?.DisplayName ?? "Unknown",
-                Path = context.Request.Path,
-                Method = context.Request.Method,
-                StatusCode = context.Response.StatusCode
-            };
+        var log = new AuditLog
+        {
+            UserId = userId,
+            Action = context.GetEndpoint()?.DisplayName ?? "Unknown",
+            Path = context.Request.Path.HasValue ? context.Request.Path.Value! : string.Empty,
+            Method = context.Request.Method,
+            StatusCode = context.Response.StatusCode
+        };
+
 
             db.AuditLogs.Add(log);
             await db.SaveChangesAsync();
         }
     }
+}
+
 }

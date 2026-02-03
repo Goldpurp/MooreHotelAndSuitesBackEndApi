@@ -19,6 +19,7 @@ using MooreHotelAndSuites.Domain.Events;
 using MooreHotelAndSuites.Application.Interfaces.Events;
 using MooreHotelAndSuites.Infrastructure.Events;
 using MooreHotelAndSuites.Infrastructure.Services;
+using MooreHotelAndSuites.API.Middleware;
 
 
 

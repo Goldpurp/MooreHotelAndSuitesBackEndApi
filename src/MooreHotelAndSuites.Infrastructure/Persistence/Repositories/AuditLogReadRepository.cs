@@ -18,13 +18,14 @@ public sealed class AuditLogReadRepository : IAuditLogReadRepository
     {
         return await _context.AuditLogs
             .OrderByDescending(a => a.OccurredAt)
-            .Select(a => new LedgerEntryDto
-            {
+           .Select(a => new LedgerEntryDto
+{
                 Timestamp = a.OccurredAt,
-                ActorUserId = a.UserId,
+                ActorUserId = a.UserId ?? "Unknown",
                 Action = a.Action,
                 Resource = a.Path
             })
+
             .ToListAsync();
     }
 

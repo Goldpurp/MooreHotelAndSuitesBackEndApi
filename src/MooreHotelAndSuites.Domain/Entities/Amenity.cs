@@ -8,7 +8,8 @@ namespace MooreHotelAndSuites.Domain.Entities
      public class Amenity
     {
         public Guid Id { get; set; }
-        public string Name { get; set; }
+       public string Name { get; set; } = string.Empty;
+
 
        
         public ICollection<RoomAmenity> RoomAmenities { get; set; } 
