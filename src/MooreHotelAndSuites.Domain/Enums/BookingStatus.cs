@@ -4,9 +4,10 @@ namespace MooreHotelAndSuites.Domain.Enums
     {
         Pending = 0,
         PaymentConfirmed = 1,
-        CheckedIn = 2,
-         Reserved = 3,
-        Cancelled = 4,
+        Reserved = 2,
+        CheckedIn = 3,
+        CheckedOut = 4,
+        Cancelled = 5,
         
     }
 }

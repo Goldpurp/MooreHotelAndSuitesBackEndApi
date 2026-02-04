@@ -6,6 +6,9 @@ namespace MooreHotelAndSuites.Application.Interfaces.Repositories
 {
     Task AddAsync(Guest guest);
     Task<Guest?> GetByIdAsync(int id);
+    Task<List<Guest>> GetAllAsync();
+    Task<int> CountAsync();
+    Task<Guest?> FindByNameAsync(string fullName);
     Task<Guest?> FindByEmailAsync(string email);
     Task<Guest?> FindByPhoneAsync(string phone);
 }

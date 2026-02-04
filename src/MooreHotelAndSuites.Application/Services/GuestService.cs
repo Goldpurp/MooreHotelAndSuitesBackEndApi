@@ -13,40 +13,43 @@ namespace MooreHotelAndSuites.Application.Services
     {
         _repo = repo;
     }
-
-    public async Task<int> EnsureGuestAsync(
-        string fullName,
-        string? email,
-        string phone)
+     public async Task<Guest?> FindByNameAsync(string fullName)
     {
-        // Normalize inputs
-        email = email?.Trim().ToLower();
-        fullName = fullName.Trim();
-        phone = phone.Trim();
+        if (string.IsNullOrWhiteSpace(fullName))
+            return null;
 
-      
-        if (!string.IsNullOrEmpty(email))
-        {
-            var existing = await _repo.FindByEmailAsync(email);
-            if (existing != null)
-                return existing.Id;
-        }
-
-        var existingByPhone = await _repo.FindByPhoneAsync(phone);
-        if (existingByPhone != null)
-            return existingByPhone.Id;
-
-       
-        var guest = new Guest
-        {
-            FullName = fullName,
-            Email = email ?? "",
-            PhoneNumber = phone
-        };
-
-        await _repo.AddAsync(guest);
-        return guest.Id;
+        return await _repo.FindByNameAsync(fullName.Trim());
     }
+
+    public async Task<Guest?> FindByPhoneAsync(string phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone))
+            return null;
+
+        return await _repo.FindByPhoneAsync(phone.Trim());
+    }
+   public async Task<int> EnsureGuestAsync(
+    string fullName,
+    string email,
+    string phone)
+{
+    
+    var byPhone = await _repo.FindByPhoneAsync(phone);
+    if (byPhone != null)
+        return byPhone.Id;
+
+    
+    var byName = await _repo.FindByNameAsync(fullName);
+    if (byName != null)
+        return byName.Id;
+
+  
+    var guest = new Guest(fullName.Trim(), email.Trim(), phone.Trim());
+
+    await _repo.AddAsync(guest);
+
+    return guest.Id;
+}
 
     public async Task<Guest?> GetByIdAsync(int id)
     {

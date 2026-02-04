@@ -2,6 +2,7 @@ using MooreHotelAndSuites.Domain.Entities;
 using MooreHotelAndSuites.Application.Interfaces.Repositories;
 using MooreHotelAndSuites.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using MooreHotelAndSuites.Application.Common;
 
 namespace MooreHotelAndSuites.Infrastructure.Persistence.Repositories
 {
@@ -18,6 +19,25 @@ public class GuestRepository : IGuestRepository
 
     public async Task<Guest?> GetByIdAsync(int id)
         => await _db.Guests.FindAsync(id);
+    public async Task<List<Guest>> GetAllAsync()
+    {
+        return await _db.Guests
+            .AsNoTracking()
+            .ToListAsync();
+    }
+    public async Task<int> CountAsync()
+{
+    return await _db.Guests.CountAsync();
+}
+
+  public async Task<Guest?> FindByNameAsync(string fullName)
+{
+    var normalized = NameHelper.Normalize(fullName);
+
+    return await _db.Guests
+        .FirstOrDefaultAsync(g =>
+            NameHelper.Normalize(g.FullName) == normalized);
+}
 
     public async Task<Guest?> FindByEmailAsync(string email)
         => await _db.Guests

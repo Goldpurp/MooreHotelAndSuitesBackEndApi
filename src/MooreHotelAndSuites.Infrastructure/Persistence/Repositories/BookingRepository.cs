@@ -2,6 +2,7 @@ using MooreHotelAndSuites.Domain.Entities;
 using MooreHotelAndSuites.Application.Interfaces.Repositories;
 using MooreHotelAndSuites.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using MooreHotelAndSuites.Domain.Enums;
 
 namespace MooreHotelAndSuites.Infrastructure.Persistence.Repositories
 {
@@ -18,6 +19,45 @@ namespace MooreHotelAndSuites.Infrastructure.Persistence.Repositories
             _db.Bookings.Update(booking);
             await Task.CompletedTask;
         }
+        public async Task<Booking?> GetLastPendingAsync()
+        {
+            return await _db.Bookings
+                .Where(b => b.Status == BookingStatus.Pending)
+                .OrderBy(b => b.CheckIn)
+                .FirstOrDefaultAsync();
+        }
+        public async Task<Booking?> GetRecentPendingByGuestAsync(
+    int guestId,
+    TimeSpan window)
+{
+    var cutoff = DateTime.UtcNow.Subtract(window);
+
+    return await _db.Bookings
+        .Where(b =>
+            b.GuestId == guestId &&
+            b.Status == BookingStatus.Pending &&
+            b.CreatedAt >= cutoff)
+        .FirstOrDefaultAsync();
+}
+
+public async Task<Booking?> GetLastPendingByGuestIdAsync(int guestId)
+{
+    return await _db.Bookings
+        .Where(b =>
+            b.Status == BookingStatus.Pending &&
+            b.GuestId == guestId)
+        .OrderByDescending(b => b.CreatedAt)
+        .FirstOrDefaultAsync();
+}
+
+
+public async Task<IEnumerable<Booking>> GetAllPendingAsync()
+{
+    return await _db.Bookings
+        .Where(b => b.Status == BookingStatus.Pending)
+        .OrderByDescending(b => b.CreatedAt)
+        .ToListAsync();
+}
 
         public async Task SaveChangesAsync()
         {

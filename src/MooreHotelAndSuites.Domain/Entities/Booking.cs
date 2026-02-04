@@ -10,6 +10,7 @@ namespace MooreHotelAndSuites.Domain.Entities
 
     public Guid Id { get; private set; }
     public string Reference { get; private set; } = string.Empty;
+    public DateTime CreatedAt { get; private set; }
 
     public DateTime CheckIn { get; private set; }
     public DateTime CheckOut { get; private set; }
@@ -40,8 +41,30 @@ namespace MooreHotelAndSuites.Domain.Entities
 
         Status = BookingStatus.Reserved;
     }
+public void AssignGuest(int guestId)
+{
+    if (guestId <= 0) 
+        throw new InvalidOperationException("GuestId must be valid");
 
-   
+    if (GuestId != 0)
+        throw new InvalidOperationException("Guest already assigned");
+
+    GuestId = guestId;
+}
+
+ public void ValidateConfirmationInput(
+    decimal amount,
+    string inputGuestName)
+{
+    if (Status != BookingStatus.Pending)
+        throw new InvalidOperationException("Booking is not pending");
+
+    if (amount <= 0)
+        throw new InvalidOperationException("Invalid amount");
+
+    // name check will be done in controller using Guest entity
+}
+
     public void ConfirmPayment(decimal amount)
     {
         AmountPaid += amount;
@@ -60,40 +83,47 @@ namespace MooreHotelAndSuites.Domain.Entities
 
         AddDomainEvent(new BookingCheckedInDomainEvent(Id));
     }
+    public void MarkAsCheckedOut()
+{
+    if (Status != BookingStatus.CheckedIn)
+        throw new InvalidOperationException(
+            "Only checked-in bookings can be checked out");
 
-    public Payment AddPayment(
-        decimal amount,
-        string paymentMethod,
-        string payeeName,
-        string? accountNumber,
-        string? bankName,
-        string staffId)
-    {
-        if (amount <= 0)
-            throw new InvalidOperationException("Payment amount must be greater than zero");
+    Status = BookingStatus.CheckedOut;
 
-        var payment = new Payment(
-            Id,
-            amount,
-            paymentMethod,
-            payeeName,
-            accountNumber,
-            bankName,
-            staffId
-        );
+    AddDomainEvent(new BookingCheckedOutDomainEvent(Id));
+}
 
-        _payments.Add(payment);
 
-       
-        ConfirmPayment(amount);
+   public Payment AddPayment(
+    decimal amount,
+    string paymentMethod,
+    string staffId,
+    string guestFullName)
+{
+    if (amount <= 0)
+        throw new InvalidOperationException("Payment amount must be greater than zero");
 
-        return payment;
-    }
+    var payment = new Payment(
+        bookingId: Id,              // automatic
+        amount: amount,
+        paymentMethod: paymentMethod,
+        payeeName: guestFullName,   // from guest
+        staffId: staffId            // from logged user
+    );
+
+    _payments.Add(payment);
+
+    ConfirmPayment(amount);
+
+    return payment;
+}
+
 public static Booking Create(
     Guid roomId,
     DateTime checkIn,
     DateTime checkOut,
-    int guestId) // now int
+    int guestId) // int
 {
     var booking = new Booking
     {
@@ -103,7 +133,8 @@ public static Booking Create(
         CheckIn = checkIn,
         CheckOut = checkOut,
         GuestId = guestId, // int
-        Status = BookingStatus.Pending
+        Status = BookingStatus.Pending,
+        CreatedAt = DateTime.UtcNow
     };
 
     booking.AddDomainEvent(new BookingCreatedDomainEvent(booking.Id, booking.GuestId));

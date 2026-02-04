@@ -11,6 +11,9 @@ namespace MooreHotelAndSuites.Application.Interfaces.Services
         string phone);
 
     Task<Guest?> GetByIdAsync(int id);
+     Task<Guest?> FindByNameAsync(string fullName);
+
+    Task<Guest?> FindByPhoneAsync(string phone);
 }
 
 }
