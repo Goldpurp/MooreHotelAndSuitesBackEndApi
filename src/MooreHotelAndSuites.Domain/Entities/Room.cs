@@ -22,7 +22,9 @@ namespace MooreHotelAndSuites.Domain.Entities
         public RoomStatus Status { get; set; } = RoomStatus.Available;
 
         // Relations
-        public ICollection<RoomAmenity> RoomAmenities { get; set; }
+        public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+       public ICollection<RoomAmenity> RoomAmenities { get; set; } = new List<RoomAmenity>();
+
         public ICollection<RoomImage> Images { get; set; } = new List<RoomImage>();
         public ICollection<RoomReview> Reviews { get; set; } = new List<RoomReview>();
 

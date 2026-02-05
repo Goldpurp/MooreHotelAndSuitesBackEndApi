@@ -6,7 +6,6 @@ using MooreHotelAndSuites.Domain.Events;
 using MooreHotelAndSuites.Application.Interfaces.Events;
 
 
-
 namespace MooreHotelAndSuites.Application.Services
 {
     public class BookingService  : IBookingService
@@ -14,46 +13,137 @@ namespace MooreHotelAndSuites.Application.Services
 {
     private readonly IBookingRepository _repo;
     private readonly IDomainEventDispatcher _eventDispatcher;
-
+   private readonly IGuestService _guestService;
     public BookingService(
         IBookingRepository repo,
-        IDomainEventDispatcher eventDispatcher)
+        IDomainEventDispatcher eventDispatcher,
+        IGuestService guestService)
     {
         _repo = repo;
         _eventDispatcher = eventDispatcher;
+        _guestService = guestService;
     }
 
 
-        public async Task<BookingDto> CreateAsync(CreateBookingDto dto, string guestId)
-        {
-            var booking = new Booking
-            {
-                Id = Guid.NewGuid(),
-                Reference = $"BK-{Guid.NewGuid().ToString()[..8].ToUpper()}",
-                CheckIn = dto.CheckIn,
-                CheckOut = dto.CheckOut,
-                RoomId = dto.RoomId,
-                GuestId = guestId
-            };
+   public async Task<Guid> CreateBookingAsync(CreateBookingRequestDto dto)
+{
+   
+   var guestId = await _guestService.EnsureGuestAsync(
+    dto.GuestFullName,
+    dto.GuestEmail ?? string.Empty, // or throw if email is required
+    dto.GuestPhoneNumber
+);
 
-            await _repo.AddAsync(booking);
+var existing = await _repo.GetRecentPendingByGuestAsync(
+    guestId,
+    TimeSpan.FromMinutes(15));
 
-               await _eventDispatcher.DispatchAsync(
-              new BookingCreatedEvent(
-            booking.Id,
-            booking.GuestId,
-            DateTime.UtcNow));
+if (existing != null)
+{
+    throw new InvalidOperationException(
+        "Guest already has a pending booking within last 10 minutes");
+}
 
-            return new BookingDto
-            {
-                Id = booking.Id,
-                Reference = booking.Reference,
-                CheckIn = booking.CheckIn,
-                CheckOut = booking.CheckOut,
-                RoomId = booking.RoomId,
-                GuestId = booking.GuestId
-            };
-        }
+    
+    var booking = Booking.Create(
+        roomId: dto.RoomId,
+        checkIn: dto.CheckInDate,
+        checkOut: dto.CheckOutDate,
+        guestId: guestId
+    );
+
+    // Optional upfront payment
+    if (dto.InitialPaymentAmount.HasValue)
+    {
+       booking.AddPayment(
+        dto.InitialPaymentAmount.Value,
+        dto.PaymentMethod ?? "Cash",
+        staffId: "SYSTEM",
+        guestFullName: dto.GuestFullName
+    );
+
+    }
+
+    await _repo.AddAsync(booking);
+
+    return booking.Id;
+}
+
+
+
+public async Task<Guid> CreateDraftAsync(CreateBookingRequestDto dto)
+{
+    // Ensure guest exists (create if needed)
+    var guestId = await _guestService.EnsureGuestAsync(
+        dto.GuestFullName,
+        dto.GuestEmail ?? string.Empty,
+        dto.GuestPhoneNumber
+    );
+
+    // Create draft booking with guestId
+    var booking = Booking.Create(
+        roomId: dto.RoomId,
+        checkIn: dto.CheckInDate,
+        checkOut: dto.CheckOutDate,
+        guestId: guestId
+    );
+
+    // Status is Pending by default (awaiting payment)
+    await _repo.AddAsync(booking);
+
+    return booking.Id;
+}
+public async Task<Booking?> FindPendingForConfirmationAsync(
+    string? fullName,
+    string? phone)
+{
+    // 1. Find guest first
+    Guest? guest = null;
+
+    if (!string.IsNullOrEmpty(fullName))
+        guest = await _guestService.FindByNameAsync(fullName);
+
+    if (guest == null && !string.IsNullOrEmpty(phone))
+        guest = await _guestService.FindByPhoneAsync(phone);
+
+    if (guest == null)
+        return null;
+
+    // 2. Then find booking by GuestId
+    return await _repo.GetLastPendingByGuestIdAsync(guest.Id);
+}
+
+
+public async Task CheckInAsync(Guid bookingId)
+{
+    var booking = await _repo.GetByIdAsync(bookingId);
+
+    if (booking == null)
+        throw new Exception("Booking not found");
+
+    booking.MarkAsCheckedIn();
+
+    await _repo.AddAsync(booking);
+
+    await _eventDispatcher.DispatchAsync(booking.DomainEvents);
+}
+public async Task CheckOutAsync(Guid bookingId)
+{
+    var booking = await _repo.GetByIdAsync(bookingId);
+
+    if (booking == null)
+        throw new Exception("Booking not found");
+ 
+   if (DateTime.UtcNow < booking.CheckOut)
+    throw new InvalidOperationException("Cannot checkout before the scheduled date");
+
+    booking.MarkAsCheckedOut();
+
+    await _repo.UpdateAsync(booking);
+
+    await _eventDispatcher.DispatchAsync(booking.DomainEvents);
+}
+
 
         public async Task<BookingDto?> GetAsync(Guid id)
     {

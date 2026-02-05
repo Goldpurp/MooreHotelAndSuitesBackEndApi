@@ -1,4 +1,5 @@
 using MooreHotelAndSuites.Application.DTOs.Admin;
+using MooreHotelAndSuites.Application.DTOs.Guests;
 using MooreHotelAndSuites.Application.Interfaces.Identity;
 namespace MooreHotelAndSuites.Application.Interfaces.Services
 {
@@ -6,7 +7,7 @@ namespace MooreHotelAndSuites.Application.Interfaces.Services
     {
         Task<AdminStatsDto> GetStatsAsync();
          Task<IReadOnlyList<IApplicationUser>> GetEmployeesAsync();
-        Task<IReadOnlyList<IApplicationUser>> GetClientsAsync();
+        Task<IReadOnlyList<GuestDto>> GetGuestsAsync();
         Task OnboardStaffAsync(OnboardStaffDto dto);
         Task ActivateAccountAsync(string userId);
         Task DeactivateAccountAsync(string userId);

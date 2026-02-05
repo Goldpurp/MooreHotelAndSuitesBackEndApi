@@ -3,7 +3,7 @@ using MooreHotelAndSuites.Domain.Events;
 using MooreHotelAndSuites.Application.Interfaces.Auditing;
 
 public sealed class BookingCreatedAuditHandler
-    : IDomainEventHandler<BookingCreatedEvent>
+    : IDomainEventHandler<BookingCreatedDomainEvent>
 {
     private readonly IAuditLogWriter _writer;
 
@@ -12,11 +12,13 @@ public sealed class BookingCreatedAuditHandler
         _writer = writer;
     }
 
-    public Task HandleAsync(BookingCreatedEvent evt)
+    public Task Handle(
+        BookingCreatedDomainEvent notification,
+        CancellationToken cancellationToken)
     {
         return _writer.WriteAsync(
-            evt.GuestId.ToString(),
+            notification.GuestId.ToString(),
             "BOOKING_CREATED",
-            $"booking/{evt.BookingId}");
+            $"booking/{notification.BookingId}");
     }
 }

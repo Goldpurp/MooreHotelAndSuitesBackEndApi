@@ -8,6 +8,7 @@ using MooreHotelAndSuites.Application.Interfaces.Repositories;
 using MooreHotelAndSuites.Application.Interfaces.Services;
 using MooreHotelAndSuites.Application.Interfaces.Auditing;
 using MooreHotelAndSuites.Application.Services;
+using MooreHotelAndSuites.Application.EventHandlers;
 using MooreHotelAndSuites.Infrastructure.Data;
 using MooreHotelAndSuites.Infrastructure.Identity;
 using MooreHotelAndSuites.Infrastructure.Persistence.Repositories;
@@ -17,6 +18,12 @@ using MooreHotelAndSuites.Domain.Abstractions;
 using MooreHotelAndSuites.Domain.Events;
 using MooreHotelAndSuites.Application.Interfaces.Events;
 using MooreHotelAndSuites.Infrastructure.Events;
+using MooreHotelAndSuites.Infrastructure.Services;
+using MooreHotelAndSuites.API.Middleware;
+
+
+
+using MediatR;
 
 
 
@@ -135,6 +142,10 @@ services.AddScoped<IAuditAnalyticsRepository, AuditAnalyticsRepository>();
 services.AddScoped<IBookingReadRepository, BookingReadRepository>();
 services.AddScoped<IAuditLogReadRepository, AuditLogReadRepository>();
 
+services.AddScoped<IBookingRepository, BookingRepository>();
+services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+
+
 
 
 services.AddScoped<IRoomCommandService, RoomCommandService>();
@@ -147,11 +158,14 @@ services.AddScoped<IImageStorageService, CloudinaryImageStorageService>();
 services.AddScoped<IUserManagementService, UserManagementService>();
 services.AddScoped<IAuditAnalyticsService, AuditAnalyticsService>();
 services.AddScoped<IOperationsService, OperationsService>();
-services.AddScoped<
-    IDomainEventHandler<BookingCreatedEvent>,
-    BookingCreatedAuditHandler>();
-services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
+services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
+services.AddScoped<IEmailService, EmailService>();
+services.AddScoped<IIdentityLookupService, IdentityEmailService>();
+services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(PaymentConfirmedEventHandler).Assembly);
+});
 
 var app = builder.Build();
 

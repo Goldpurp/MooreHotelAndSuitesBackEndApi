@@ -7,7 +7,7 @@ namespace MooreHotelAndSuites.API.Controllers
 {
     [ApiController]
     [Route("api/admin")]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Roles = "Admin")]   // simpler than policy for now
     public class AdminManagementController : ControllerBase
     {
         private readonly IAdminManagementService _admin;
@@ -17,24 +17,64 @@ namespace MooreHotelAndSuites.API.Controllers
             _admin = admin;
         }
 
+
+        // DASHBOARD
+
+
         [HttpGet("stats")]
         public async Task<ActionResult<AdminStatsDto>> GetStats()
-            => Ok(await _admin.GetStatsAsync());
+        {
+            var stats = await _admin.GetStatsAsync();
+            return Ok(stats);
+        }
+
+
+        // USERS & STAFF
+
 
         [HttpGet("employees")]
         public async Task<IActionResult> GetEmployees()
-            => Ok(await _admin.GetEmployeesAsync());
+        {
+            var users = await _admin.GetEmployeesAsync();
+            return Ok(users);
+        }
 
         [HttpGet("clients")]
         public async Task<IActionResult> GetClients()
-            => Ok(await _admin.GetClientsAsync());
+        {
+            var guests = await _admin.GetGuestsAsync();
+            return Ok(guests);
+        }
+
+
+        // STAFF ONBOARDING
+
 
         [HttpPost("staff")]
-        public async Task<IActionResult> OnboardStaff(OnboardStaffDto dto)
+        public async Task<IActionResult> OnboardStaff([FromBody] OnboardStaffDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // Only allowed roles
+            var allowed = new[] { "Admin", "Manager", "Receptionist" };
+
+            if (!allowed.Contains(dto.Role))
+                return BadRequest($"Role must be one of: {string.Join(", ", allowed)}");
+
             await _admin.OnboardStaffAsync(dto);
-            return Ok();
+
+            return Ok(new
+            {
+                message = "Staff account created successfully",
+                role = dto.Role,
+                email = dto.Email
+            });
         }
+
+
+        // ACCOUNT MANAGEMENT
+
 
         [HttpPost("activate/{userId}")]
         public async Task<IActionResult> Activate(string userId)

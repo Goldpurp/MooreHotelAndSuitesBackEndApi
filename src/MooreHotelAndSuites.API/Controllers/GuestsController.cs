@@ -16,18 +16,7 @@ namespace MooreHotelAndSuites.API.Controllers
             _guestService = guestService;
         }
 
-        [HttpPost]
-        [Authorize]
-        public async Task<IActionResult> Create([FromBody] CreateGuestDto dto)
-        {
-            var guestId = await _guestService.CreateAsync(dto);
-
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = guestId },
-                null
-            );
-        }
+        
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)

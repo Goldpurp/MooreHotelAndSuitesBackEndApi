@@ -1,6 +1,7 @@
-namespace MooreHotelAndSuites.Application.DTOs.Admin
+
+namespace MooreHotelAndSuites.Application.DTOs.Users
 {
-public class OnboardStaffDto
+    public class CreateUserDto
 {
     public string FullName { get; set; } = string.Empty;
 
