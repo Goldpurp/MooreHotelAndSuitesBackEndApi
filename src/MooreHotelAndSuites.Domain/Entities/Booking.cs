@@ -19,13 +19,18 @@ namespace MooreHotelAndSuites.Domain.Entities
     public Room Room { get; private set; } = null!;
 
    public int GuestId { get; private set; }
+    public Guest Guest { get; private set; } = null!;
+
+    public string? UserAccountId { get; private set; } // optional
 
 
 
-    
+    public int Occupants { get; private set; }
+
     public BookingStatus Status { get; private set; } = BookingStatus.Pending;
     public decimal AmountPaid { get; private set; }
     public decimal TotalAmount => _payments.Sum(p => p.Amount);
+    public decimal ExpectedAmount { get; private set; }
 
     private readonly List<IDomainEvent> _domainEvents = new();
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents;
@@ -37,10 +42,12 @@ namespace MooreHotelAndSuites.Domain.Entities
     public void Reserve()
     {
         if (Status != BookingStatus.PaymentConfirmed)
-            throw new InvalidOperationException("Payment must be confirmed first");
+            throw new InvalidOperationException(
+                "Payment must be confirmed first");
 
         Status = BookingStatus.Reserved;
     }
+
 public void AssignGuest(int guestId)
 {
     if (guestId <= 0) 
@@ -74,16 +81,21 @@ public void AssignGuest(int guestId)
     }
 
     public void MarkAsCheckedIn()
-    {
-        if (Status != BookingStatus.PaymentConfirmed)
-            throw new InvalidOperationException(
-                "Only confirmed bookings can be checked in");
+{
+    if (Status != BookingStatus.Reserved)
+        throw new InvalidOperationException(
+            "Only reserved bookings can be checked in");
 
-        Status = BookingStatus.CheckedIn;
+    if (DateTime.UtcNow.Date < CheckIn.Date)
+        throw new InvalidOperationException(
+            "Cannot check in before scheduled check-in date");
 
-        AddDomainEvent(new BookingCheckedInDomainEvent(Id));
-    }
-    public void MarkAsCheckedOut()
+    Status = BookingStatus.CheckedIn;
+
+    AddDomainEvent(new BookingCheckedInDomainEvent(Id));
+}
+
+ public void MarkAsCheckedOut()
 {
     if (Status != BookingStatus.CheckedIn)
         throw new InvalidOperationException(
@@ -95,6 +107,7 @@ public void AssignGuest(int guestId)
 }
 
 
+
    public Payment AddPayment(
     decimal amount,
     string paymentMethod,
@@ -104,6 +117,9 @@ public void AssignGuest(int guestId)
     if (amount <= 0)
         throw new InvalidOperationException("Payment amount must be greater than zero");
 
+    if (Status != BookingStatus.Pending)
+        throw new InvalidOperationException(
+            "Only pending bookings can receive payment");
     var payment = new Payment(
         bookingId: Id,              // automatic
         amount: amount,
@@ -120,26 +136,34 @@ public void AssignGuest(int guestId)
 }
 
 public static Booking Create(
-    Guid roomId,
+    int guestId,
     DateTime checkIn,
     DateTime checkOut,
-    int guestId) // int
+    int occupants,
+    decimal roomPricePerNight)
 {
+    var nights = (checkOut - checkIn).Days;
+
     var booking = new Booking
     {
         Id = Guid.NewGuid(),
-        Reference = $"BK-{Guid.NewGuid().ToString()[..8].ToUpper()}",
-        RoomId = roomId,
+        GuestId = guestId,
         CheckIn = checkIn,
         CheckOut = checkOut,
-        GuestId = guestId, // int
+        Occupants = occupants,
         Status = BookingStatus.Pending,
-        CreatedAt = DateTime.UtcNow
+        CreatedAt = DateTime.UtcNow,
+
+        ExpectedAmount = nights * roomPricePerNight
     };
 
-    booking.AddDomainEvent(new BookingCreatedDomainEvent(booking.Id, booking.GuestId));
+  booking.AddDomainEvent(
+    new BookingCreatedDomainEvent(booking.Id, guestId)
+);
+
     return booking;
 }
+
 
 
 

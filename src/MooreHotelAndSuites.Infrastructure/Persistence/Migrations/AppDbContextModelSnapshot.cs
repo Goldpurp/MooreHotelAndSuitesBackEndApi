@@ -169,11 +169,50 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
                     b.ToTable("Amenities");
                 });
 
+            modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.AuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Entity")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("StatusCode")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuditLogs");
+                });
+
             modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.Booking", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<decimal>("AmountPaid")
+                        .HasColumnType("numeric");
 
                     b.Property<DateTime>("CheckIn")
                         .HasColumnType("timestamp with time zone");
@@ -181,9 +220,17 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
                     b.Property<DateTime>("CheckOut")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("GuestId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("ExpectedAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("GuestId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Occupants")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Reference")
                         .IsRequired()
@@ -192,7 +239,15 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserAccountId")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("GuestId");
 
                     b.HasIndex("RoomId");
 
@@ -216,6 +271,9 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
 
                     b.Property<string>("FullName")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("IdentityUserId")
                         .HasColumnType("text");
 
                     b.Property<string>("PhoneNumber")
@@ -246,6 +304,96 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Hotels");
+                });
+
+            modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.MenuItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MenuItems");
+                });
+
+            modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.Payment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid>("BookingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConfirmedByStaffId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PayeeName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId");
+
+                    b.ToTable("Payment");
                 });
 
             modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.Room", b =>
@@ -369,6 +517,49 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
                     b.ToTable("RoomReviews");
                 });
 
+            modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.ServiceOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BookingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("GuestId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("RoomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RoomNumber")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ServiceOrders");
+                });
+
             modelBuilder.Entity("MooreHotelAndSuites.Infrastructure.Identity.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -380,6 +571,12 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("text");
+
+                    b.Property<string>("CreatedByAdminId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -396,6 +593,9 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("MustChangePassword")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -495,13 +695,30 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
 
             modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.Booking", b =>
                 {
-                    b.HasOne("MooreHotelAndSuites.Domain.Entities.Room", "Room")
+                    b.HasOne("MooreHotelAndSuites.Domain.Entities.Guest", "Guest")
                         .WithMany()
-                        .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasForeignKey("GuestId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("MooreHotelAndSuites.Domain.Entities.Room", "Room")
+                        .WithMany("Bookings")
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Guest");
+
                     b.Navigation("Room");
+                });
+
+            modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.Payment", b =>
+                {
+                    b.HasOne("MooreHotelAndSuites.Domain.Entities.Booking", null)
+                        .WithMany("Payments")
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.Room", b =>
@@ -552,9 +769,51 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
                     b.Navigation("Room");
                 });
 
+            modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.ServiceOrder", b =>
+                {
+                    b.OwnsMany("MooreHotelAndSuites.Domain.Entities.OrderItem", "Items", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Description")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("MenuName")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<Guid>("OrderId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<int>("Quantity")
+                                .HasColumnType("integer");
+
+                            b1.Property<decimal>("UnitPrice")
+                                .HasColumnType("numeric");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("OrderId");
+
+                            b1.ToTable("OrderItems");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OrderId");
+                        });
+
+                    b.Navigation("Items");
+                });
+
             modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.Amenity", b =>
                 {
                     b.Navigation("RoomAmenities");
+                });
+
+            modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.Booking", b =>
+                {
+                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.Hotel", b =>
@@ -564,6 +823,8 @@ namespace MooreHotelAndSuites.Infrastructure.Migrations
 
             modelBuilder.Entity("MooreHotelAndSuites.Domain.Entities.Room", b =>
                 {
+                    b.Navigation("Bookings");
+
                     b.Navigation("Images");
 
                     b.Navigation("Reviews");

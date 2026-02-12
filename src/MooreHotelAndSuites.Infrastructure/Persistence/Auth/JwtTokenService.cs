@@ -42,41 +42,45 @@ public class JwtTokenService : IJwtTokenService
     }
 
   
-    public async Task<string> GenerateAccessTokenAsync(ApplicationUser user)
+   public async Task<string> GenerateAccessTokenAsync(ApplicationUser user)
+{
+    var jwtKey = _config["Jwt:Key"];
+    var issuer = _config["Jwt:Issuer"];
+    var audience = _config["Jwt:Audience"];
+
+    if (string.IsNullOrWhiteSpace(jwtKey))
+        throw new InvalidOperationException("JWT Key is missing.");
+
+    var key = Encoding.UTF8.GetBytes(jwtKey);
+
+    var claims = new List<Claim>
     {
-        var jwtKey = _config["Jwt:Key"];
-        var issuer = _config["Jwt:Issuer"];
-        var audience = _config["Jwt:Audience"];
+        new Claim(ClaimTypes.NameIdentifier, user.Id),
+        new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
+        new Claim(ClaimTypes.Name, user.UserName ?? string.Empty)
+    };
 
-        if (string.IsNullOrWhiteSpace(jwtKey))
-            throw new InvalidOperationException("JWT Key is missing.");
+    var roles = await _userManager.GetRolesAsync(user);
 
-        var key = Encoding.UTF8.GetBytes(jwtKey);
-
-        var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Name, user.UserName ?? "")
-        };
-
-        var roles = await _userManager.GetRolesAsync(user);
-        foreach (var role in roles)
-            claims.Add(new Claim(ClaimTypes.Role, role));
-
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(15), // SHORT LIVED
-            Issuer = issuer,
-            Audience = audience,
-            SigningCredentials = new SigningCredentials(
-                new SymmetricSecurityKey(key),
-                SecurityAlgorithms.HmacSha256)
-        };
-
-        var handler = new JwtSecurityTokenHandler();
-        return handler.WriteToken(handler.CreateToken(tokenDescriptor));
+    foreach (var role in roles)
+    {
+        claims.Add(new Claim(ClaimTypes.Role, role));
     }
+
+    var tokenDescriptor = new SecurityTokenDescriptor
+    {
+        Subject = new ClaimsIdentity(claims),
+        Expires = DateTime.UtcNow.AddMinutes(15),
+        Issuer = issuer,
+        Audience = audience,
+        SigningCredentials = new SigningCredentials(
+            new SymmetricSecurityKey(key),
+            SecurityAlgorithms.HmacSha256)
+    };
+
+    var handler = new JwtSecurityTokenHandler();
+    return handler.WriteToken(handler.CreateToken(tokenDescriptor));
+}
 
     private string GenerateRefreshToken()
     {

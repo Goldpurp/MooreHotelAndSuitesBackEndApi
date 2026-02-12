@@ -3,10 +3,9 @@ namespace MooreHotelAndSuites.Domain.Enums
 {
     public enum RoomType
     {
-        Standard,
-        Deluxe,
-        Executive,
-        Suite,
-        Presidential
+        Standard = 1,
+        Business = 2,
+        Executive = 3,
+        Suite = 4
     }
 }

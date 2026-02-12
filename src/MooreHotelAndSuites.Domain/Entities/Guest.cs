@@ -1,3 +1,5 @@
+
+
 namespace MooreHotelAndSuites.Domain.Entities
 {
     public class Guest
@@ -21,6 +23,7 @@ namespace MooreHotelAndSuites.Domain.Entities
     public string PhoneNumber { get; private set; } = string.Empty;
 
     public DateTime CreatedAt { get; private set; }
+    public string? IdentityUserId { get; set; }
 }
 
 

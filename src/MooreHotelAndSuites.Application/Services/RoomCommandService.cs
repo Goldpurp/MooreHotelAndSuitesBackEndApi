@@ -23,6 +23,9 @@ namespace MooreHotelAndSuites.Application.Services
 
         public async Task<Guid> CreateAsync(CreateRoomDto dto)
         {
+            if (!Enum.IsDefined(typeof(RoomType), dto.RoomType))
+           throw new InvalidOperationException("Invalid room tier selected");
+
             var room = new Room
             {
                 Id = Guid.NewGuid(),

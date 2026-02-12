@@ -2,21 +2,25 @@ using MooreHotelAndSuites.Application.Interfaces.Identity;
 
 namespace MooreHotelAndSuites.Infrastructure.Identity
 {
-    internal sealed class ApplicationUserView : IApplicationUser
+internal sealed class ApplicationUserView : IApplicationUser
+{
+    public ApplicationUserView(ApplicationUser user)
     {
-        public ApplicationUserView(ApplicationUser user)
-        {
-            Id = user.Id;
-            Email = user.Email!;
-            FullName = user.FullName;
-            IsActive = user.LockoutEnd == null;
-            EmailConfirmed = user.EmailConfirmed;
-        }
-
-        public string Id { get; }
-        public string Email { get; }
-        public string? FullName { get; }
-        public bool IsActive { get; }
-        public bool EmailConfirmed { get; }
+        if (user == null) throw new ArgumentNullException(nameof(user));
+        Id = user.Id ?? throw new ArgumentNullException(nameof(user.Id));
+        UserName = user.UserName ?? throw new ArgumentNullException(nameof(user.UserName));
+        Email = user.Email ?? throw new ArgumentNullException(nameof(user.Email));
+        FullName = user.FullName; // nullable is fine
+        EmailConfirmed = user.EmailConfirmed;
+        CreatedByAdminId = user.CreatedByAdminId ?? throw new ArgumentNullException(nameof(user.CreatedByAdminId));
     }
+
+    public string Id { get; }
+    public string UserName { get; }
+    public string Email { get; }
+    public string? FullName { get; }
+    public bool EmailConfirmed { get; }
+    public string CreatedByAdminId { get; }
+}
+
 }

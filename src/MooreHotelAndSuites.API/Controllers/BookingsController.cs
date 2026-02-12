@@ -8,12 +8,12 @@ using MooreHotelAndSuites.Application.Interfaces.Repositories;
 using System.Security.Claims;
 using MooreHotelAndSuites.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using MooreHotelAndSuites.Domain.Constants;
 
 namespace MooreHotelAndSuites.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]
+    [Route("api/bookings")]
     public class BookingsController : ControllerBase
     {
         private readonly IBookingService _bookingService;
@@ -27,48 +27,87 @@ namespace MooreHotelAndSuites.API.Controllers
             _guestService = guestService;
         }
 
-    [Authorize]
-    [HttpPost]
-    public async Task<IActionResult> CreateBooking([FromBody] CreateBookingRequestDto dto)
-    {
-       
-        var bookingId = await _bookingService.CreateBookingAsync(dto);
+       [AllowAnonymous]
+        [HttpPost]
+        public async Task<IActionResult> CreateBooking(
+            [FromBody] CreateBookingRequestDto dto)
+        {
+            var bookingId = await _bookingService.CreateBookingAsync(dto);
 
-        return Ok(new { id = bookingId });
-    }
+            return Ok(new
+            {
+                id = bookingId,
+                message = "Booking created and awaiting payment confirmation"
+            });
+        }
 
-[HttpPost("confirm-last")]
-public async Task<IActionResult> ConfirmLastPending(ConfirmPaymentDto dto)
+        [Authorize(Roles = Roles.Receptionist + "," + Roles.Manager)]
+        [HttpGet("pending")]
+        public async Task<IActionResult> GetPending()
+        {
+            var list = await _repo.GetAllPendingAsync();
+
+            var result = list.Select(b => new
+            {
+                b.Id,
+                b.Reference,
+                b.CheckIn,
+                b.CheckOut,
+                GuestId = b.GuestId,
+                Status = b.Status.ToString(),
+                CreatedAt = b.CreatedAt
+            });
+
+            return Ok(result);
+        }
+
+
+
+
+[Authorize(Roles = Roles.Receptionist + "," + Roles.Manager)]
+[HttpPost("confirm-payment")]
+public async Task<IActionResult> ConfirmPayment(
+    [FromBody] ConfirmPaymentDto dto)
 {
     var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
     if (staffId is null)
         return Unauthorized();
 
+    // Find pending booking using name or phone from credit alert
     var booking = await _bookingService.FindPendingForConfirmationAsync(
         dto.GuestFullName,
-        dto.GuestPhoneNumber);
+        dto.GuestPhoneNumber
+    );
 
     if (booking == null)
         return BadRequest("No matching pending booking");
 
     var guest = await _guestService.GetByIdAsync(booking.GuestId);
+    if (guest == null)
+        return BadRequest("Guest not found");
 
+    // DOMAIN ACTION
     booking.AddPayment(
-        dto.Amount,
-        dto.PaymentMethod,
-        staffId,
-        guest!.FullName
+        amount: dto.Amount,
+        paymentMethod: dto.PaymentMethod,
+        staffId: staffId,
+        guestFullName: guest.FullName
     );
 
     booking.Reserve();
 
     await _repo.UpdateAsync(booking);
+    await _repo.SaveChangesAsync();   
 
     return Ok(new
     {
         booking.Id,
         booking.Reference,
-        Status = booking.Status.ToString()
+        Guest = guest.FullName,
+        Status = booking.Status.ToString(),
+        AmountPaid = booking.AmountPaid,
+        TotalAmount = booking.TotalAmount,
+        message = "Payment confirmed – room reserved"
     });
 }
 
@@ -83,13 +122,8 @@ public async Task<IActionResult> ConfirmLastPending(ConfirmPaymentDto dto)
             if (booking == null) return NotFound();
             return Ok(booking);
         }
-        [HttpPost("draft")]
-        public async Task<IActionResult> CreateDraft([FromBody] CreateBookingRequestDto dto)
-        {
-            var id = await _bookingService.CreateDraftAsync(dto);
-            return Ok(new { id });
-        }
-
+       
+       [Authorize(Roles = Roles.Receptionist)]
         [HttpPost("{id:guid}/checkin")]
         public async Task<IActionResult> CheckIn(Guid id)
         {
@@ -97,12 +131,13 @@ public async Task<IActionResult> ConfirmLastPending(ConfirmPaymentDto dto)
             return NoContent();
         }
 
-       [HttpPost("{id:guid}/checkout")]
+        [Authorize(Roles = Roles.Receptionist)]
+        [HttpPost("{id:guid}/checkout")]
         public async Task<IActionResult> CheckOut(Guid id)
         {
             await _bookingService.CheckOutAsync(id);
             return NoContent();
-        }
+}
 
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> Cancel(Guid id)

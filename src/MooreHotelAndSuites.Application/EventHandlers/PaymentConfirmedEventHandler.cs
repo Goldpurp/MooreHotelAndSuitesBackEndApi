@@ -29,47 +29,43 @@ namespace MooreHotelAndSuites.Application.EventHandlers
         _guestService = guestService;
        _identity = identity;
     }
-public async Task Handle(
-    PaymentConfirmedDomainEvent notification,
-    CancellationToken cancellationToken)
+public async Task HandleAsync(PaymentConfirmedDomainEvent notification)
 {
-   var booking = await _bookingRepo.GetByIdAsync(notification.BookingId);
+    var booking = await _bookingRepo.GetByIdAsync(notification.BookingId);
 
-if (booking is null)
-    return;
+    if (booking is null)
+        return;
 
-booking.Reserve();
-await _bookingRepo.UpdateAsync(booking);
+    booking.Reserve();
+    await _bookingRepo.UpdateAsync(booking);
 
-// get guest from domain
-var guest = await _guestService.GetByIdAsync(booking.GuestId);
+    var guest = await _guestService.GetByIdAsync(booking.GuestId);
 
-if (guest is null || string.IsNullOrEmpty(guest.Email))
-    return;
+    if (guest is null || string.IsNullOrEmpty(guest.Email))
+        return;
 
-try
-{
-    await _emailService.SendAsync(
-        to: guest.Email,
-        subject: $"Payment Receipt - {booking.Reference}",
-        body: BuildReceiptEmail(booking, guest) // pass guest
-    );
-}
-catch
-{
-    await _auditRepo.AddAsync(new AuditLog
+    try
     {
-        Id = Guid.NewGuid(),
-        UserId = booking.GuestId.ToString(),
-        Entity = nameof(Booking),
-        Action = "EMAIL_FAILED",
-        Method = "DomainEvent",
-        Path = $"booking/{booking.Id}",
-        StatusCode = 500,
-        OccurredAt = DateTime.UtcNow
-    });
-}
-
+        await _emailService.SendAsync(
+            to: guest.Email,
+            subject: $"Payment Receipt - {booking.Reference}",
+            body: BuildReceiptEmail(booking, guest)
+        );
+    }
+    catch
+    {
+        await _auditRepo.AddAsync(new AuditLog
+        {
+            Id = Guid.NewGuid(),
+            UserId = booking.GuestId.ToString(),
+            Entity = nameof(Booking),
+            Action = "EMAIL_FAILED",
+            Method = "DomainEvent",
+            Path = $"booking/{booking.Id}",
+            StatusCode = 500,
+            OccurredAt = DateTime.UtcNow
+        });
+    }
 }
 
 

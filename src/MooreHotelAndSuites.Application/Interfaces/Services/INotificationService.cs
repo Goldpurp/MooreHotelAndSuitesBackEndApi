@@ -7,5 +7,9 @@ namespace MooreHotelAndSuites.Application.Interfaces.Services
         Task<List<NotificationDto>> GetMyAsync(string userId);
         Task<List<NotificationDto>> GetStaffAsync();
         Task MarkAsReadAsync(Guid id);
+
+        // For real-time notifications
+        Task BroadcastAsync(string channel, object payload);
+        Task NotifyStaffAsync(string title, string message);
     }
 }

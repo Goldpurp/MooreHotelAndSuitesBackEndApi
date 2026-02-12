@@ -4,9 +4,8 @@ using MooreHotelAndSuites.Domain.Entities;
 
    public interface IBookingService
 {
-   Task<Guid> CreateBookingAsync(CreateBookingRequestDto dto);
+   Task<BookingDto> CreateBookingAsync(CreateBookingRequestDto dto);
 
-    Task<Guid> CreateDraftAsync(CreateBookingRequestDto dto);
     Task<Booking?> FindPendingForConfirmationAsync(
     string? fullName,
     string? phone);

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MooreHotelAndSuites.Application.Interfaces.Identity;
 using MooreHotelAndSuites.Infrastructure.Identity;
+using MooreHotelAndSuites.Domain.Constants;
 
 namespace MooreHotelAndSuites.Infrastructure.Identity
 {
@@ -26,31 +27,39 @@ namespace MooreHotelAndSuites.Infrastructure.Identity
             var users = await _users.GetUsersInRoleAsync(role);
             return users.Select(u => new ApplicationUserView(u)).ToList();
         }
+public async Task<IApplicationUser> CreateUserAsync(
+    string email,
+    string fullName,
+    string password,
+    string role,
+    string? createdByAdminId = null) // optional for public users
+{
+    var user = new ApplicationUser
+    {
+        UserName = email,
+        Email = email,
+        FullName = fullName,
+        EmailConfirmed = !string.IsNullOrEmpty(createdByAdminId),
+        MustChangePassword = false,
+        CreatedByAdminId = createdByAdminId,
+        CreatedOn = DateTime.UtcNow
+    };
 
-        public async Task CreateUserAsync(
-            string email,
-            string fullName,
-            string password,
-            string role)
-        {
-            if (!await _roles.RoleExistsAsync(role))
-                throw new InvalidOperationException("Role does not exist");
+    var result = await _users.CreateAsync(user, password);
+    if (!result.Succeeded)
+        throw new InvalidOperationException(
+            string.Join("; ", result.Errors.Select(e => e.Description)));
 
-            var user = new ApplicationUser
-            {
-                UserName = email,
-                Email = email,
-                FullName = fullName,
-                EmailConfirmed = true
-            };
+    // Assign default role (e.g., "User") if role is null
+    if (!string.IsNullOrWhiteSpace(role))
+    {
+        await _users.AddToRoleAsync(user, role);
+    }
+    
 
-            var result = await _users.CreateAsync(user, password);
-            if (!result.Succeeded)
-                throw new InvalidOperationException(
-                    string.Join(", ", result.Errors.Select(e => e.Description)));
+    return new ApplicationUserView(user); // or IApplicationUser
+}
 
-            await _users.AddToRoleAsync(user, role);
-        }
 
         public async Task ActivateAsync(string userId)
         {
@@ -79,3 +88,4 @@ namespace MooreHotelAndSuites.Infrastructure.Identity
         }
     }
 }
+

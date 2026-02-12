@@ -9,18 +9,24 @@ namespace MooreHotelAndSuites.Application.Services
     public class AdminManagementService : IAdminManagementService
     {
         private readonly IUserManagementService _users;
+        
         private readonly IBookingReadRepository _bookingRepo;
+        private readonly ICurrentUserService _currentUser;
+        private readonly IEmailService _emailService;
       private readonly IGuestRepository _guestRepo;
-        public AdminManagementService(
+          public AdminManagementService(
             IUserManagementService users,
+            ICurrentUserService currentUser,
             IBookingReadRepository bookingRepo,
-            IGuestRepository guestRepo)
+            IGuestRepository guestRepo,
+            IEmailService emailService)
         {
             _users = users;
+            _currentUser = currentUser;
             _bookingRepo = bookingRepo;
-            _guestRepo =  guestRepo;
+            _guestRepo = guestRepo;
+            _emailService = emailService;
         }
-
         public async Task<AdminStatsDto> GetStatsAsync()
         {
             var totalUsers = await _users.CountUsersAsync();
@@ -68,12 +74,39 @@ namespace MooreHotelAndSuites.Application.Services
 
         public async Task OnboardStaffAsync(OnboardStaffDto dto)
         {
-            
-            await _users.CreateUserAsync(
-                dto.Email,
-                dto.FullName,
-                dto.Password,
-                dto.Role
+            // Generate temporary password
+            var tempPassword = "Tmp@" + Guid.NewGuid().ToString("N").Substring(0, 8);
+
+              var adminId = _currentUser.UserId;
+
+            if (string.IsNullOrEmpty(adminId))
+                throw new UnauthorizedAccessException("Only authenticated admins can create staff");
+                
+           var createdUser = await _users.CreateUserAsync(
+            dto.Email,
+            dto.FullName,
+            tempPassword,
+            dto.Role,
+            createdByAdminId: adminId // the ID of the admin performing the action
+        );
+
+
+            // Send temporary password via email
+            await _emailService.SendAsync(
+                to: dto.Email,
+                subject: "Your Moore Hotel Staff Account",
+                body: $@"Dear {dto.FullName},
+
+        Your account at Moore Hotel & Suites has been created.
+
+        Temporary login credentials:
+        Username: {dto.Email}
+        Password: {tempPassword}
+
+        Please log in and change your password immediately.
+
+        Regards,
+        Moore Hotel Administration"
             );
         }
 
