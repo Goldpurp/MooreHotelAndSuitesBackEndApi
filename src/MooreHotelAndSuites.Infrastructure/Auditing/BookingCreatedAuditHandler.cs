@@ -12,13 +12,12 @@ public sealed class BookingCreatedAuditHandler
         _writer = writer;
     }
 
-    public Task Handle(
-        BookingCreatedDomainEvent notification,
-        CancellationToken cancellationToken)
-    {
-        return _writer.WriteAsync(
-            notification.GuestId.ToString(),
-            "BOOKING_CREATED",
-            $"booking/{notification.BookingId}");
-    }
+   public Task HandleAsync(BookingCreatedDomainEvent domainEvent)
+{
+    return _writer.WriteAsync(
+        domainEvent.GuestId.ToString(),
+        "BOOKING_CREATED",
+        $"booking/{domainEvent.BookingId}");
+}
+
 }

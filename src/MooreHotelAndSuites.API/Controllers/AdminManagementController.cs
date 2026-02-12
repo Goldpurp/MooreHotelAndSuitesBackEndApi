@@ -2,12 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MooreHotelAndSuites.Application.DTOs.Admin;
 using MooreHotelAndSuites.Application.Interfaces.Services;
+using MooreHotelAndSuites.Domain.Constants;
 
 namespace MooreHotelAndSuites.API.Controllers
 {
     [ApiController]
     [Route("api/admin")]
-    [Authorize(Roles = "Admin")]   // simpler than policy for now
+    [Authorize(Roles = Roles.Admin)]  
     public class AdminManagementController : ControllerBase
     {
         private readonly IAdminManagementService _admin;
@@ -56,12 +57,12 @@ namespace MooreHotelAndSuites.API.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Only allowed roles
-            var allowed = new[] { "Admin", "Manager", "Receptionist" };
+         var allowed = Roles.StaffRoles;
 
-            if (!allowed.Contains(dto.Role))
-                return BadRequest($"Role must be one of: {string.Join(", ", allowed)}");
+    if (!allowed.Contains(dto.Role))
+        return BadRequest($"Role must be one of: {string.Join(", ", allowed)}");
 
+          
             await _admin.OnboardStaffAsync(dto);
 
             return Ok(new

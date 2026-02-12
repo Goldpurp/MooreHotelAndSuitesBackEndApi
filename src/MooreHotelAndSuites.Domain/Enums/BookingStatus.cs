@@ -7,7 +7,7 @@ namespace MooreHotelAndSuites.Domain.Enums
         Reserved = 2,
         CheckedIn = 3,
         CheckedOut = 4,
-        Cancelled = 5,
+       
         
     }
 }

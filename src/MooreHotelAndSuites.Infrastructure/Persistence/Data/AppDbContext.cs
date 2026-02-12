@@ -21,7 +21,10 @@ namespace MooreHotelAndSuites.Infrastructure.Data
         public DbSet<RoomReview> RoomReviews => Set<RoomReview>();
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
-
+         public DbSet<MenuItem> MenuItems => Set<MenuItem>();
+        public DbSet<ServiceOrder> ServiceOrders => Set<ServiceOrder>();
+        public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+        
 
   protected override void OnModelCreating(ModelBuilder builder)
 {
@@ -57,7 +60,23 @@ namespace MooreHotelAndSuites.Infrastructure.Data
     .WithMany(r => r.Bookings)
     .HasForeignKey(b => b.RoomId);
 
+builder.Entity<ServiceOrder>(e =>
+{
+    e.HasKey(x => x.Id);
 
+    e.OwnsMany(x => x.Items, b =>
+    {
+        b.WithOwner().HasForeignKey("OrderId");
+        b.Property<Guid>("Id");
+        b.HasKey("Id");
+    });
+});
+
+builder.Entity<MenuItem>(e =>
+{
+    e.HasKey(x => x.Id);
+    e.Property(x => x.Name).IsRequired();
+});
 
   
 builder.Entity<RoomReview>()

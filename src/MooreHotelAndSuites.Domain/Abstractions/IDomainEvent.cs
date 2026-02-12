@@ -1,11 +1,7 @@
-
-using MediatR;
-
-
 namespace MooreHotelAndSuites.Domain.Abstractions
-{  public interface IDomainEvent : INotification
+{
+    public interface IDomainEvent
     {
         DateTime OccurredOn { get; }
     }
 }
-
