@@ -14,11 +14,23 @@ namespace MooreHotelAndSuites.Infrastructure.Persistence.Repositories
         public async Task<IEnumerable<Booking>> GetByRoomAsync(Guid roomId) => await _db.Bookings.Where(b=>b.RoomId==roomId).ToListAsync();
         public async Task<Booking?> GetByIdAsync(Guid id) => await _db.Bookings.FindAsync(id);
         
-        public async Task UpdateAsync(Booking booking)
+       public async Task UpdateAsync(Booking booking)
         {
             _db.Bookings.Update(booking);
-            await Task.CompletedTask;
+            await _db.SaveChangesAsync();   // ✅
         }
+       public async Task<Booking?> GetActiveByUserAccountIdAsync(string userAccountId)
+        {
+            return await _db.Bookings
+                .Include(b => b.Guest)
+                .Include(b => b.Room)
+                .Where(b =>
+                    b.UserAccountId == userAccountId &&
+                    (b.Status == BookingStatus.CheckedIn ||
+                    b.Status == BookingStatus.Reserved))
+                .FirstOrDefaultAsync();
+        }
+
         public async Task<Booking?> GetLastPendingAsync()
         {
             return await _db.Bookings
@@ -37,6 +49,24 @@ namespace MooreHotelAndSuites.Infrastructure.Persistence.Repositories
             b.GuestId == guestId &&
             b.Status == BookingStatus.Pending &&
             b.CreatedAt >= cutoff)
+        .FirstOrDefaultAsync();
+}
+public async Task<Booking?> GetActiveByGuestAsync(
+    string name,
+    string phone)
+{
+    return await _db.Bookings
+        .Include(b => b.Room)
+        .Include(b => b.Payments)
+
+        .Where(b =>
+            (b.Status == BookingStatus.CheckedIn ||
+             b.Status == BookingStatus.Reserved)
+
+            && _db.Guests.Any(g =>
+                g.Id == b.GuestId &&
+                g.FullName == name &&
+                g.PhoneNumber == phone))
         .FirstOrDefaultAsync();
 }
 

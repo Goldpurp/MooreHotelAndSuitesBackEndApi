@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using MooreHotelAndSuites.API.Hubs;
 using Microsoft.OpenApi.Models;
 using MooreHotelAndSuites.API.Mappings;
+using MooreHotelAndSuites.Application.Notifications;
 using MooreHotelAndSuites.Application.Interfaces.Repositories;
 using MooreHotelAndSuites.Application.Interfaces.Services;
 using MooreHotelAndSuites.Application.Interfaces.Auditing;
@@ -20,22 +22,19 @@ using MooreHotelAndSuites.Application.Interfaces.Events;
 using MooreHotelAndSuites.Infrastructure.Events;
 using MooreHotelAndSuites.Infrastructure.Services;
 using MooreHotelAndSuites.API.Middleware;
-
-
-
-using MediatR;
-
-
-
-
-
-
+using MooreHotelAndSuites.Application.EventHandlers.Orders;
+using Microsoft.AspNetCore.SignalR;
+using MooreHotelAndSuites.Infrastructure.Notifications;
+using MooreHotelAndSuites.API.Realtime;
+using MooreHotelAndSuites.Application.Interfaces.Identity;
+using MooreHotelAndSuites.Application.Interfaces.Realtime;
 
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 var services = builder.Services;
+services.AddSignalR();
 
 
 services.AddControllers();
@@ -141,7 +140,7 @@ services.AddScoped<IAuditLogWriter, AuditLogWriter>();
 services.AddScoped<IAuditAnalyticsRepository, AuditAnalyticsRepository>();
 services.AddScoped<IBookingReadRepository, BookingReadRepository>();
 services.AddScoped<IAuditLogReadRepository, AuditLogReadRepository>();
-
+services.AddScoped<INotificationRepository, NotificationRepository>();
 services.AddScoped<IBookingRepository, BookingRepository>();
 services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
@@ -158,8 +157,29 @@ services.AddScoped<IImageStorageService, CloudinaryImageStorageService>();
 services.AddScoped<IUserManagementService, UserManagementService>();
 services.AddScoped<IAuditAnalyticsService, AuditAnalyticsService>();
 services.AddScoped<IOperationsService, OperationsService>();
-
+services.AddScoped<IOrderRepository, OrderRepository>();
+services.AddScoped<IMenuRepository, MenuRepository>();
 services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
+services.AddScoped<NotificationRouter>();
+services.AddScoped<IDomainEventHandler<OrderCreatedEvent>, OrderCreatedHandler>();
+builder.Services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
+
+builder.Services.AddScoped<INotificationChannelHandler, KitchenNotificationHandler>();
+builder.Services.AddScoped<INotificationChannelHandler, BarNotificationHandler>();
+builder.Services.AddScoped<INotificationChannelHandler, RoomServiceNotificationHandler>();
+builder.Services.AddScoped<INotificationChannelHandler, EventServiceNotificationHandler>();
+builder.Services.AddScoped<INotificationChannelHandler, LaundryNotificationHandler>();
+
+services.AddHttpContextAccessor();
+services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+
+services.AddScoped<
+    IDomainEventHandler<OrderPaymentConfirmedEvent>,
+    OrderPaymentConfirmedHandler>();
+services.AddSignalR();
+services.AddScoped<INotificationService, NotificationService>();
+
 services.AddScoped<IEmailService, EmailService>();
 services.AddScoped<IIdentityLookupService, IdentityEmailService>();
 services.AddMediatR(cfg =>
@@ -169,15 +189,19 @@ services.AddMediatR(cfg =>
 
 var app = builder.Build();
 
-
 using (var scope = app.Services.CreateScope())
 {
     var sp = scope.ServiceProvider;
-    var db = sp.GetRequiredService<AppDbContext>();
 
+    var db = sp.GetRequiredService<AppDbContext>();
     await DbInitializer.Initialize(db);
+
+    var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
+    await RoleSeeder.SeedAsync(roleManager);
+
     await IdentitySeeder.SeedAsync(sp);
 }
+
 
 
 if (app.Environment.IsDevelopment())
@@ -191,7 +215,7 @@ if (app.Environment.IsDevelopment())
 }
 
 
-
+app.MapHub<NotificationHub>("/hubs/notifications");
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
